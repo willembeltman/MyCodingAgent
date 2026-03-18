@@ -2,12 +2,14 @@
 using MyCodingAgent.Helpers;
 using MyCodingAgent.Interfaces;
 using MyCodingAgent.Models;
+using MyCodingAgent.OllamaClient;
+using MyCodingAgent.Shared;
 using MyCodingAgent.ToolCalls;
 using MyCodingAgent.ToolCalls.AgentCommunication;
 
 public class Debugger_Agent : BaseAgent, IAgent
 {
-    public Debugger_Agent(Workspace workspace, OllamaClient client) : base(workspace, client)
+    public Debugger_Agent(Workspace workspace, Client client) : base(workspace, client)
     {
         WorkspaceTool = new Workspace_Tool(workspace);
         DebugAgentIsDoneTool = new DebuggingIsDone_Tool(workspace);
@@ -31,14 +33,14 @@ public class Debugger_Agent : BaseAgent, IAgent
     protected override List<PromptResponseResults> History => Workspace.DebugHistory;
     protected override IToolCall[] Tools { get; }
 
-    public async Task<OllamaPrompt> GeneratePrompt()
+    public async Task<Prompt> GeneratePrompt()
     {
         var compileResult = await Workspace.Compile();
-        List <OllamaMessage> messageList =
+        List <Message> messageList =
         [
             // SYSTEM MESSAGE
-            new OllamaMessage(
-                nameof(OllamaAgentRole.System).ToLower(),
+            new Message(
+                nameof(AgentRole.System).ToLower(),
                 null,
                 $@"You are a .NET 10 repair agent.
 
@@ -63,8 +65,8 @@ RULES
                 null),
         ];
 
-        var currentSubTaskMessage = new OllamaMessage(
-            nameof(OllamaAgentRole.User).ToLower(),
+        var currentSubTaskMessage = new Message(
+            nameof(AgentRole.User).ToLower(),
             null,
             $@"--- CURRENT COMPILATION RESULT ---
 {compileResult.Content}
@@ -87,7 +89,7 @@ If there are 0 errors in the compilation result, immediately call '{DebugAgentIs
             maxTokens: 4096,
             additionalSizeInBytes: 0);
 
-        return new OllamaPrompt(
+        return new Prompt(
             [.. messageList],
             [.. Tools.Select(a => a.ToDto())]);
     }
@@ -99,9 +101,9 @@ If there are 0 errors in the compilation result, immediately call '{DebugAgentIs
     /// processed.</param>
     /// <param name="agentResponse">The response object returned by the agent, containing the results to be evaluated.</param>
     /// <returns>if there was any tool call, if not this indicates maybe a different agent should continue</returns>
-    public Task<bool> ProcessResponse(OllamaPrompt prompt, OllamaResponse agentResponse)
+    public Task<bool> ProcessResponse(Prompt prompt, Response agentResponse)
         => ProcessResponse(prompt, agentResponse, true);
-    public async Task<bool> ProcessResponse(OllamaPrompt prompt, OllamaResponse agentResponse, bool save)
+    public async Task<bool> ProcessResponse(Prompt prompt, Response agentResponse, bool save)
     {
         var response = await GetAgentResponseResult(prompt, agentResponse, Tools);
         if (save) History.Add(response);

@@ -1,5 +1,6 @@
 ﻿using MyCodingAgent.Interfaces;
 using MyCodingAgent.Models;
+using MyCodingAgent.Shared;
 
 namespace MyCodingAgent.ToolCalls.AgentCommunication;
 
@@ -16,7 +17,7 @@ public class DebuggerNeedsProjectManager_Tool(Workspace workspace) : IToolCall
         new ("content", "string", "Question or missing information")
     ];
 
-    public async Task<ToolResult> Invoke(OllamaToolCall toolCall)
+    public async Task<ToolResult> Invoke(ToolCall toolCall)
     {
         var toolArguments = toolCall.function.arguments;
         if (toolArguments.content == null)

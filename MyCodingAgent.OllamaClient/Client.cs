@@ -1,12 +1,15 @@
 ﻿using MyCodingAgent.Models;
+using MyCodingAgent.Shared;
 using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json;
 
-namespace MyCodingAgent.Helpers;
+namespace MyCodingAgent.OllamaClient;
 
-public class OllamaClient(
-    Uri? ollamaServerUrl = null) : IDisposable
+public class Client(
+    Uri? ollamaServerUrl = null) 
+    : IDisposable
+    , ILlmClient
 {
     private readonly HttpClient HttpClient = new()
     {
@@ -15,7 +18,7 @@ public class OllamaClient(
     private readonly Uri OllamaServerUrl = ollamaServerUrl ?? new Uri("http://localhost:11434");
     private readonly Dictionary<Language, Dictionary<string, string>> Dictionaries = new Dictionary<Language, Dictionary<string, string>>();
 
-    public async Task<OllamaModel[]> GetModels(CancellationToken ct = default)
+    public async Task<Model[]> GetModels(CancellationToken ct = default)
     {
         var url = new Uri(OllamaServerUrl, "/api/tags");
         var response = await HttpClient.GetAsync(url, ct);
@@ -27,12 +30,40 @@ public class OllamaClient(
         if (data?.models == null)
             return [];
 
-        return [.. data.models
-            .Where(a => !string.IsNullOrWhiteSpace(a.name) && a.size != null && a.modified_at != null)
-            .Select(a => new OllamaModel(a.name!, a.size!,a.modified_at!))];
+        var models = new List<Model>();
+        foreach (var model in data.models
+            .Where(a =>
+                !string.IsNullOrWhiteSpace(a.name) &&
+                a.size != null &&
+                a.modified_at != null))
+        {
+            var maxTokenSize = await GetContextSize(model.name!, ct);
+            models.Add(new Model(
+                model.name!,
+                model.size!,
+                maxTokenSize,
+                model.modified_at!));
+        }
+        return [.. models];
+    }
+    private async Task<int?> GetContextSize(string model, CancellationToken ct = default)
+    {
+        var url = new Uri(OllamaServerUrl, "/api/show");
+
+        var body = JsonSerializer.Serialize(new { name = model });
+        var content = new StringContent(body, Encoding.UTF8, "application/json");
+
+        var response = await HttpClient.PostAsync(url, content, ct);
+        response.EnsureSuccessStatusCode();
+
+        await using var stream = await response.Content.ReadAsStreamAsync(ct);
+
+        var data = await JsonSerializer.DeserializeAsync<OllamaShowResponse>(stream, cancellationToken: ct);
+
+        return data?.parameters?.num_ctx;
     }
 
-    public async Task InitializeModelAsync(OllamaModel model, CancellationToken ct = default)
+    public async Task InitializeModelAsync(Model model, CancellationToken ct = default)
     {
         var request = new { model = model.Name };
         var url = new Uri(OllamaServerUrl, "/api/pull");
@@ -40,21 +71,39 @@ public class OllamaClient(
         response.EnsureSuccessStatusCode();
     }
 
-    public async Task<OllamaResponse> ChatAsync(OllamaModel model, OllamaPrompt prompt, CancellationToken ct = default)
+    public async Task<Response> ChatAsync(Model model, Prompt prompt, CancellationToken ct = default)
     {
-        //var messages = prompt.messages
-        //    .Select(message => 
-        //        new OllamaMessage(
-        //            message.role, 
-        //            message.tool_call_id,
-        //            message.content,
-        //            null, 
-        //            message.tool_calls));
+        OllamaMessage[] messages =
+        [
+            ..prompt.messages.Select(a =>
+                new OllamaMessage(
+                    a.role,
+                    a.tool_call_id,
+                    a.content,
+                    a.thinking,
+                    a.tool_calls == null? null : [..a.tool_calls.Select(b =>
+                        new OllamaToolCall(
+                            b.id,
+                            new OllamaToolCallFunction(
+                                b.function.name,
+                                new OllamaToolCallFunctionArguments()
+                                {
+                                    action = b.function.arguments.action,
+                                    content = b.function.arguments.content,
+                                    id = b.function.arguments.id,
+                                    lineNumber = b.function.arguments.lineNumber,
+                                    newPath = b.function.arguments.newPath,
+                                    path = b.function.arguments.path,
+                                    query = b.function.arguments.query,
+                                    replaceText = b.function.arguments.replaceText
+                                })))
+                    ]))
+        ];
 
         var tools = CreateToolsJson(prompt.tools);
         var payload = $@"{{
   ""model"": ""{model.Name}"",
-  ""messages"": {JsonSerializer.Serialize(prompt.messages, DefaultJsonSerializerOptions.JsonSerializeOptionsIndented)},
+  ""messages"": {JsonSerializer.Serialize(messages, DefaultJsonSerializerOptions.JsonSerializeOptionsIndented)},
   ""stream"": false,
   ""tools"": [{tools}]
 }}";
@@ -75,10 +124,34 @@ public class OllamaClient(
             JsonSerializer.Deserialize<OllamaResponse>(agentResponseString)
             ?? throw new Exception("Something is not right");
 
-        return agentResponse;
+        return new Response(
+            agentResponse.model,
+            agentResponse.created_at,
+            new Message(
+                agentResponse.message.role,
+                agentResponse.message.tool_call_id,
+                agentResponse.message.content,
+                agentResponse.message.thinking,
+                agentResponse.message.tool_calls == null
+                ? (ToolCall[]?)null
+                :
+                [
+                    ..agentResponse.message.tool_calls.Select(a =>
+                        new ToolCall(a.id, new ToolCallFunction(a.function.name, new ToolCallFunctionArguments()
+                        {
+                            action = a.function.arguments.action,
+                            content = a.function.arguments.content,
+                            id = a.function.arguments.id,
+                            lineNumber = a.function.arguments.lineNumber,
+                            newPath = a.function.arguments.newPath,
+                            path = a.function.arguments.path,
+                            query = a.function.arguments.query,
+                            replaceText = a.function.arguments.replaceText,
+                        })))
+                ]));
     }
 
-    public async Task<string> Translate(OllamaModel model, Language toLanguage, string content, bool overwrite, CancellationToken ct = default)
+    public async Task<string> Translate(Model model, Language toLanguage, string content, bool overwrite, CancellationToken ct = default)
     {
         if (!Dictionaries.TryGetValue(toLanguage, out var dictionary))
         {
@@ -144,9 +217,24 @@ public class OllamaClient(
         return agentTranslation;
     }
 
-    public static string CreateToolsJson(Tool[] tools)
+    public string CreateToolsJson(Tool[] tools)
     {
-        return string.Join(",", tools.Select(tool => $@"
+        OllamaTool[] ollamaTools =
+        [
+            ..tools.Select(a =>
+                new OllamaTool(
+                    a.Name,
+                    a.Desciption,
+                    [ ..a.Parameters.Select(b =>
+                        new OllamaToolParameter(
+                            b.Name,
+                            b.Type,
+                            b.Description,
+                            b.Enum,
+                            b.Optional))
+                    ]))
+        ];
+        return string.Join(",", ollamaTools.Select(tool => $@"
   {{
     ""type"": ""function"",
     ""function"": {{
@@ -166,11 +254,11 @@ public class OllamaClient(
     }}
   }}"));
     }
-    public static string? JsonEscape(string? s)
+    private string? JsonEscape(string? value)
     {
-        if (s == null) return null;
+        if (value == null) return null;
         var sb = new System.Text.StringBuilder();
-        foreach (var c in s)
+        foreach (var c in value)
         {
             switch (c)
             {

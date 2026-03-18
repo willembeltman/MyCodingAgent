@@ -1,5 +1,6 @@
 ﻿using MyCodingAgent.Interfaces;
 using MyCodingAgent.Models;
+using MyCodingAgent.Shared;
 
 namespace MyCodingAgent.ToolCalls.AgentCommunication;
 
@@ -16,7 +17,7 @@ public class DebuggerNeedsProjectManagerAnswer_Tool(Workspace workspace) : ITool
         new ("content", "string", "The detailed answer or instruction that will be sent back to the coding agent")
     ];
 
-    public async Task<ToolResult> Invoke(OllamaToolCall toolCall)
+    public async Task<ToolResult> Invoke(ToolCall toolCall)
     {
         var toolArguments = toolCall.function.arguments;
         if (toolArguments.content == null)

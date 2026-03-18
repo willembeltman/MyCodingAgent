@@ -1,6 +1,8 @@
-﻿namespace MyCodingAgent.Models;
+﻿using MyCodingAgent.Shared;
+
+namespace MyCodingAgent.Models;
 
 public record PromptResponseResults(
-    OllamaPrompt Prompt,
-    OllamaResponse Response,
+    Prompt Prompt,
+    Response Response,
     List<ToolCallResult> ToolCallResults);

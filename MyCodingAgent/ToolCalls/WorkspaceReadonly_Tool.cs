@@ -1,6 +1,7 @@
 ﻿using MyCodingAgent.Helpers;
 using MyCodingAgent.Interfaces;
 using MyCodingAgent.Models;
+using MyCodingAgent.Shared;
 using System.Text;
 using System.Text.RegularExpressions;
 
@@ -27,7 +28,7 @@ public class WorkspaceReadonly_Tool(Workspace Workspace) : IToolCall
         new ("query", "string", "Exact text to find, for text_search action", null, true),
     ];
 
-    public virtual async Task<ToolResult> Invoke(OllamaToolCall toolCall)
+    public virtual async Task<ToolResult> Invoke(ToolCall toolCall)
     {
         var toolArguments = toolCall.function.arguments;
         if (toolArguments.action == null)
@@ -51,13 +52,13 @@ public class WorkspaceReadonly_Tool(Workspace Workspace) : IToolCall
         };
     }
 
-    protected async Task<ToolResult> FilesList(OllamaToolCall toolCall)
+    protected async Task<ToolResult> FilesList(ToolCall toolCall)
     {
         var toolArguments = toolCall.function.arguments;
         var listAllFilesText = await Workspace.GetListAllFilesText();
         return new ToolResult(listAllFilesText, "Shown all files", false);
     }
-    protected async Task<ToolResult> Read(OllamaToolCall toolCall)
+    protected async Task<ToolResult> Read(ToolCall toolCall)
     {
         var toolArguments = toolCall.function.arguments;
         if (toolArguments.path == null)
@@ -81,7 +82,7 @@ public class WorkspaceReadonly_Tool(Workspace Workspace) : IToolCall
             $"Showed file '{toolArguments.path}'",
             false);
     }
-    protected async Task<ToolResult> Compile(OllamaToolCall toolCall)
+    protected async Task<ToolResult> Compile(ToolCall toolCall)
     {
         var toolArguments = toolCall.function.arguments;
         var compileResult = await Workspace.Compile(toolArguments.path);
@@ -91,7 +92,7 @@ public class WorkspaceReadonly_Tool(Workspace Workspace) : IToolCall
             compileResult.Errors.Count > 0 ? "Compiled with error(s)" : compileResult.Errors.Count > 0 ? "Compiled with warning(s)" : "Compiled succesfully",
             false);
     }
-    protected async Task<ToolResult> TextSearch(OllamaToolCall toolCall)
+    protected async Task<ToolResult> TextSearch(ToolCall toolCall)
     {
         var toolArguments = toolCall.function.arguments;
         if (toolArguments.query == null)
@@ -139,7 +140,7 @@ public class WorkspaceReadonly_Tool(Workspace Workspace) : IToolCall
             $"Showed search results",
             false);
     }
-    protected async Task<ToolResult> Diff(OllamaToolCall toolCall)
+    protected async Task<ToolResult> Diff(ToolCall toolCall)
     {
         var toolArguments = toolCall.function.arguments;
 
@@ -174,7 +175,7 @@ public class WorkspaceReadonly_Tool(Workspace Workspace) : IToolCall
             false);
     }
 
-    protected static StringBuilder GetDiffText(OllamaToolCallFunctionArguments toolArguments, string oldContent, string newContent)
+    protected static StringBuilder GetDiffText(ToolCallFunctionArguments toolArguments, string oldContent, string newContent)
     {
         var diffBuilder = new DiffPlex.DiffBuilder.SideBySideDiffBuilder(new DiffPlex.Differ());
         var model = diffBuilder.BuildDiffModel(oldContent, newContent);

@@ -1,10 +1,11 @@
 ﻿using MyCodingAgent.Agents;
 using MyCodingAgent.Helpers;
 using MyCodingAgent.Models;
+using MyCodingAgent.OllamaClient;
 
 public class Team
 {
-    public Team(Workspace workspace, OllamaClient llmService)
+    public Team(Workspace workspace, Client llmService)
     {
         codingAgent = new Coder_Agent(workspace, llmService);
         codingForDebugAgent = new CoderForDebugger_Agent(workspace, llmService);

@@ -1,13 +1,15 @@
 ﻿using MyCodingAgent.Helpers;
 using MyCodingAgent.Interfaces;
 using MyCodingAgent.Models;
+using MyCodingAgent.OllamaClient;
+using MyCodingAgent.Shared;
 using MyCodingAgent.ToolCalls;
 
 namespace MyCodingAgent.Agents;
 
 public class ProjectManagerCodeReviewer_Agent : BaseAgent, IAgent
 {
-    public ProjectManagerCodeReviewer_Agent(Workspace workspace, OllamaClient client) : base(workspace, client)
+    public ProjectManagerCodeReviewer_Agent(Workspace workspace, Client client) : base(workspace, client)
     {
         WorkspaceTool = new WorkspaceReadonly_Tool(workspace);
         SubTasksTool = new SubTasks_Tool(workspace);
@@ -31,13 +33,13 @@ public class ProjectManagerCodeReviewer_Agent : BaseAgent, IAgent
     protected override List<PromptResponseResults> History => Workspace.PlanningHistory;
     protected override IToolCall[] Tools { get; }
 
-    public async Task<OllamaPrompt> GeneratePrompt()
+    public async Task<Prompt> GeneratePrompt()
     {
-        List<OllamaMessage> messageList = 
+        List<Message> messageList = 
         [
             // SYSTEM PROMPT
-            new OllamaMessage(
-                nameof(OllamaAgentRole.System).ToLower(),
+            new Message(
+                nameof(AgentRole.System).ToLower(),
                 null,
                 $@"You are a planning agent inside a .NET 10 development workspace.
 
@@ -75,8 +77,8 @@ If the requested functionality already exists in the codebase you may call {Code
                 null),
 
             // USER ORIGINAL PROMPT
-            new OllamaMessage(
-                nameof(OllamaAgentRole.User).ToLower(),
+            new Message(
+                nameof(AgentRole.User).ToLower(),
                 null,
                 $@"--- DEVELOPER REQUEST ---
 {Workspace.UserPrompt}
@@ -93,7 +95,7 @@ If the requested functionality already exists in the codebase you may call {Code
             maxTokens: 4096,
             additionalSizeInBytes: 0);
 
-        return new OllamaPrompt(
+        return new Prompt(
             [.. messageList],
             [.. Tools.Select(a => a.ToDto())]);
     }
@@ -105,7 +107,7 @@ If the requested functionality already exists in the codebase you may call {Code
     /// processed.</param>
     /// <param name="agentResponse">The response object returned by the agent, containing the results to be evaluated.</param>
     /// <returns>if there was any tool call, if not this indicates maybe a different agent should continue</returns>
-    public async Task<bool> ProcessResponse(OllamaPrompt prompt, OllamaResponse agentResponse)
+    public async Task<bool> ProcessResponse(Prompt prompt, Response agentResponse)
     {
         var response = await GetAgentResponseResult(prompt, agentResponse, Tools);
         History.Add(response);

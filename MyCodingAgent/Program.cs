@@ -1,21 +1,20 @@
 ﻿using MyCodingAgent.Agents;
-using MyCodingAgent.Helpers;
 using MyCodingAgent.Interfaces;
 using MyCodingAgent.Models;
-using System.Text.Json;
-using System.Text.Json.Serialization;
+using MyCodingAgent.OllamaClient;
+using MyCodingAgent.Shared;
 
 internal class Program : IDisposable
 {
     readonly CancellationTokenSource Cts;
     //readonly HashSet<OllamaMessage> ShownMessages;
-    readonly OllamaClient LlmService;
+    readonly Client LlmService;
 
     private Program()
     {
         Cts = new CancellationTokenSource();
         //ShownMessages = new HashSet<OllamaMessage>();
-        LlmService = new OllamaClient();
+        LlmService = new Client();
     }
 
     private async Task StartAsync()
@@ -58,7 +57,7 @@ internal class Program : IDisposable
     }
     private async Task RunMainLoop(
         Workspace workspace,
-        OllamaModel model,
+        Model model,
         Team team)
     {
         Console.Clear();
@@ -102,15 +101,15 @@ internal class Program : IDisposable
                 await RunCoderLoop(workspace, model, team.codingAgent, compileResult);
                 continue;
             }
-            if (NeedsCodeReview(workspace, compileResult))
+            if (NeedsCodeReview(workspace))
                 // CODE REVIEW MODE
-                await RunCodeReviewLoop(workspace, model, team.projectManagerCodeReviewerAgent, compileResult);
+                await RunCodeReviewLoop(workspace, model, team.projectManagerCodeReviewerAgent);
         }
 
         await workspace.Save();
     }
 
-    private async Task RunPlanningLoop(Workspace workspace, OllamaModel model, ProjectManagerPlanner_Agent planningAgent)
+    private async Task RunPlanningLoop(Workspace workspace, Model model, ProjectManagerPlanner_Agent planningAgent)
     {
         while (NeedsPlanner(workspace))
         {
@@ -119,7 +118,7 @@ internal class Program : IDisposable
         await workspace.Save();
         Console.Clear();
     }
-    private async Task RunCoderNeedsProjectManagerLoop(Workspace workspace, OllamaModel model, ProjectManagerForCoding_Agent projectManagerAgent)
+    private async Task RunCoderNeedsProjectManagerLoop(Workspace workspace, Model model, ProjectManagerForCoding_Agent projectManagerAgent)
     {
         while (CoderNeedsProjectManager(workspace))
         {
@@ -128,7 +127,7 @@ internal class Program : IDisposable
         await workspace.Save();
         Console.Clear();
     }
-    private async Task RunDebuggerNeedsProjectManagerLoop(Workspace workspace, OllamaModel model, ProjectManagerForDebugger_Agent projectManagerForCodingAgent)
+    private async Task RunDebuggerNeedsProjectManagerLoop(Workspace workspace, Model model, ProjectManagerForDebugger_Agent projectManagerForCodingAgent)
     {
         while (DebuggerNeedsProjectManager(workspace))
         {
@@ -137,7 +136,7 @@ internal class Program : IDisposable
         await workspace.Save();
         Console.Clear();
     }
-    private async Task RunDebuggerNeedsCoderLoop(Workspace workspace, OllamaModel model, CoderForDebugger_Agent codingForDebugAgent)
+    private async Task RunDebuggerNeedsCoderLoop(Workspace workspace, Model model, CoderForDebugger_Agent codingForDebugAgent)
     {
         while (DebuggerNeedsCoder(workspace))
         {
@@ -146,7 +145,7 @@ internal class Program : IDisposable
         await workspace.Save();
         Console.Clear();
     }
-    private async Task RunDebuggerLoop(Workspace workspace, OllamaModel model, Debugger_Agent debuggingAgent, CompileResult compileResult)
+    private async Task RunDebuggerLoop(Workspace workspace, Model model, Debugger_Agent debuggingAgent, CompileResult compileResult)
     {
         while (NeedsDebugging(workspace, compileResult))
         {
@@ -156,7 +155,7 @@ internal class Program : IDisposable
         await workspace.Save();
         Console.Clear();
     }
-    private async Task RunCoderLoop(Workspace workspace, OllamaModel model, Coder_Agent codingAgent, CompileResult compileResult)
+    private async Task RunCoderLoop(Workspace workspace, Model model, Coder_Agent codingAgent, CompileResult compileResult)
     {
         while (NeedsCoder(workspace, compileResult))
         {
@@ -166,9 +165,9 @@ internal class Program : IDisposable
         await workspace.Save();
         Console.Clear();
     }
-    private async Task RunCodeReviewLoop(Workspace workspace, OllamaModel model, ProjectManagerCodeReviewer_Agent projectManagerCodeReviewerAgent, CompileResult compileResult)
+    private async Task RunCodeReviewLoop(Workspace workspace, Model model, ProjectManagerCodeReviewer_Agent projectManagerCodeReviewerAgent)
     {
-        while (NeedsCodeReview(workspace, compileResult))
+        while (NeedsCodeReview(workspace))
         {
             await AgentFlow(workspace, model, projectManagerCodeReviewerAgent);
         }
@@ -176,13 +175,13 @@ internal class Program : IDisposable
         Console.Clear();
     }
 
-    private bool NeedsPlanner(Workspace workspace)
+    private static bool NeedsPlanner(Workspace workspace)
     {
         return
             workspace.SubTasks.Count == 0 ||
             workspace.Flags.PlanningIsDoneFlag == false;
     }
-    private bool NeedsDebugging(Workspace workspace, CompileResult compileResult)
+    private static bool NeedsDebugging(Workspace workspace, CompileResult compileResult)
     {
         if (workspace.DebugAgent_To_CoderAgent_Question != null ||
             workspace.DebugAgent_To_ProjectManagerAgent_Question != null)
@@ -202,22 +201,22 @@ internal class Program : IDisposable
         }
         return res;
     }
-    private bool CoderNeedsProjectManager(Workspace workspace)
+    private static bool CoderNeedsProjectManager(Workspace workspace)
     {
         return
             workspace.CodingAgent_To_ProjectManagerAgent_Question != null;
     }
-    private bool DebuggerNeedsCoder(Workspace workspace)
+    private static bool DebuggerNeedsCoder(Workspace workspace)
     {
         return
             workspace.DebugAgent_To_CoderAgent_Question != null;
     }
-    private bool DebuggerNeedsProjectManager(Workspace workspace)
+    private static bool DebuggerNeedsProjectManager(Workspace workspace)
     {
         return
             workspace.DebugAgent_To_ProjectManagerAgent_Question != null;
     }
-    private bool NeedsCoder(Workspace workspace, CompileResult compileResult)
+    private static bool NeedsCoder(Workspace workspace, CompileResult compileResult)
     {
         return
             workspace.CodingAgent_To_ProjectManagerAgent_Question != null ||
@@ -231,13 +230,13 @@ internal class Program : IDisposable
                 workspace.DebugAgent_To_ProjectManagerAgent_Question == null
             );
     }
-    private bool NeedsCodeReview(Workspace workspace, CompileResult compileResult)
+    private static bool NeedsCodeReview(Workspace workspace)
     {
         if (workspace.Flags.IsCodeReviewingFlag)
             return true;
 
         if (workspace.Flags.PlanningIsDoneFlag &&
-            workspace.SubTasks.Any() &&
+            workspace.SubTasks.Count != 0 &&
             workspace.SubTasks.Any(a => a.Finished == false) == false)
         {
             workspace.Flags.IsCodeReviewingFlag = true;
@@ -247,7 +246,7 @@ internal class Program : IDisposable
         return false;
     }
 
-    private async Task AgentFlow(Workspace workspace, OllamaModel model, IAgent agent)
+    private async Task AgentFlow(Workspace workspace, Model model, IAgent agent)
     {
         workspace.PromptIndex++;
         var hasToolCalls = false;
@@ -284,8 +283,7 @@ internal class Program : IDisposable
         }
     }
 
-
-    private async Task<Workspace> CreateWorkspace(string workspaceDirectory)
+    private static async Task<Workspace> CreateWorkspace(string workspaceDirectory)
     {
         var previousColor = Console.ForegroundColor;
         Console.ForegroundColor = ConsoleColor.White;
@@ -307,10 +305,10 @@ internal class Program : IDisposable
         Console.ForegroundColor = previousColor;
         return workspace;
     }
-    private OllamaModel ChooseModel(OllamaModel[] list)
+    private static Model ChooseModel(Model[] list)
     {
         var previousColor = Console.ForegroundColor;
-        OllamaModel? model = null;
+        Model? model = null;
         while (model == null)
         {
             Console.ForegroundColor = ConsoleColor.White;
@@ -318,7 +316,7 @@ internal class Program : IDisposable
             Console.WriteLine();
             for (var i = 0; i < list.Length; i++)
             {
-                Console.WriteLine($"{i}. {list[i].Name} (size: {list[i].Size})");
+                Console.WriteLine($"{i}. {list[i].Name} (size: {list[i].MemorySize})");
             }
             Console.WriteLine();
             var key = Console.ReadKey();
@@ -341,7 +339,7 @@ internal class Program : IDisposable
         Console.ForegroundColor = previousColor;
         return model;
     }
-    private void ShowMessage(OllamaMessage message)
+    private static void ShowMessage(Message message)
     {
         //if (!ShownMessages.Add(message)) return;
 
@@ -411,7 +409,7 @@ internal class Program : IDisposable
     }
 
     // Main entry point for application
-    private static async Task Main(string[] args)
+    private static async Task Main()
     {
         using var program = new Program();
         await program.StartAsync();

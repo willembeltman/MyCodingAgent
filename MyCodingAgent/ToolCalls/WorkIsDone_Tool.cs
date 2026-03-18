@@ -1,5 +1,6 @@
 ﻿using MyCodingAgent.Interfaces;
 using MyCodingAgent.Models;
+using MyCodingAgent.Shared;
 
 namespace MyCodingAgent.ToolCalls;
 
@@ -10,7 +11,7 @@ public class WorkIsDone_Tool(Workspace workspace) : IToolCall
     public string Description
         => "Use this tool to submit final results once all sub-tasks are complete and verified, and the workspace is stable";
     public ToolParameter[] Parameters { get; } = [];
-    public async Task<ToolResult> Invoke(OllamaToolCall toolCall)
+    public async Task<ToolResult> Invoke(ToolCall toolCall)
     {
         var toolArguments = toolCall.function.arguments;
         workspace.Flags.IsCodeReviewingFlag = true;

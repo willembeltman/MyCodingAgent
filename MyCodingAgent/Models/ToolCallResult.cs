@@ -1,5 +1,7 @@
-﻿namespace MyCodingAgent.Models;
+﻿using MyCodingAgent.Shared;
+
+namespace MyCodingAgent.Models;
 
 public record ToolCallResult(
-    OllamaToolCall tool_call,
+    ToolCall tool_call,
     ToolResult result);

@@ -1,6 +1,7 @@
 ﻿using MyCodingAgent.Helpers;
 using MyCodingAgent.Interfaces;
 using MyCodingAgent.Models;
+using MyCodingAgent.Shared;
 using System.Text;
 using System.Text.RegularExpressions;
 
@@ -33,7 +34,7 @@ public class Workspace_Tool(Workspace Workspace) : WorkspaceReadonly_Tool(Worksp
         new ("lineNumber", "number", "Line number for 'append' action (optional)", null, true)
     ];
 
-    public override async Task<ToolResult> Invoke(OllamaToolCall toolCall)
+    public override async Task<ToolResult> Invoke(ToolCall toolCall)
     {
         var toolArguments = toolCall.function.arguments;
         if (toolArguments.action == null)
@@ -61,7 +62,7 @@ public class Workspace_Tool(Workspace Workspace) : WorkspaceReadonly_Tool(Worksp
         };
     }
 
-    private async Task<ToolResult> Write(OllamaToolCall toolCall)
+    private async Task<ToolResult> Write(ToolCall toolCall)
     {
         var toolArguments = toolCall.function.arguments;
         if (toolArguments.path == null)
@@ -112,7 +113,7 @@ public class Workspace_Tool(Workspace Workspace) : WorkspaceReadonly_Tool(Worksp
                 true);
         }
     }    
-    private async Task<ToolResult> TextSearchAndReplace(OllamaToolCall toolCall)
+    private async Task<ToolResult> TextSearchAndReplace(ToolCall toolCall)
     {
         var toolArguments = toolCall.function.arguments;
         if (toolArguments.path == null)
@@ -152,7 +153,7 @@ public class Workspace_Tool(Workspace Workspace) : WorkspaceReadonly_Tool(Worksp
             $"Replaced {fileChanges} instances",
             false);
     }
-    private async Task<ToolResult> Delete(OllamaToolCall toolCall)
+    private async Task<ToolResult> Delete(ToolCall toolCall)
     {
         var toolArguments = toolCall.function.arguments;
         if (toolArguments.path == null)
@@ -188,7 +189,7 @@ public class Workspace_Tool(Workspace Workspace) : WorkspaceReadonly_Tool(Worksp
                 true);
         }
     }
-    private async Task<ToolResult> Move(OllamaToolCall toolCall)
+    private async Task<ToolResult> Move(ToolCall toolCall)
     {
         var toolArguments = toolCall.function.arguments;
         if (toolArguments.path == null)

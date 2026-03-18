@@ -1,5 +1,6 @@
 ﻿using MyCodingAgent.Interfaces;
 using MyCodingAgent.Models;
+using MyCodingAgent.Shared;
 
 namespace MyCodingAgent.ToolCalls;
 
@@ -10,7 +11,7 @@ public class CodeReviewIsDone_Tool(Workspace workspace) : IToolCall
     public string Description
         => "Use this tool signal your are done with the code review. If you call this after you created new subtasks, development will continue. If you call this without new subtasks, the project will be marked as done.";
     public ToolParameter[] Parameters { get; } = []; // parameters
-    public async Task<ToolResult> Invoke(OllamaToolCall toolCall)
+    public async Task<ToolResult> Invoke(ToolCall toolCall)
     {
         workspace.Flags.IsCodeReviewingFlag = false;
         workspace.Flags.WorkIsDoneFlag = !workspace.SubTasks.Any(a => a.Finished == false);

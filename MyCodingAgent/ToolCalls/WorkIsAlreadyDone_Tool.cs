@@ -1,5 +1,6 @@
 ﻿using MyCodingAgent.Interfaces;
 using MyCodingAgent.Models;
+using MyCodingAgent.Shared;
 
 namespace MyCodingAgent.ToolCalls;
 
@@ -11,7 +12,7 @@ public class WorkIsAlreadyDone_Tool(Workspace workspace) : IToolCall
         => "Use this tool to signal all required work is already done";
     public ToolParameter[] Parameters { get; } = [];
 
-    public async Task<ToolResult> Invoke(OllamaToolCall toolCall)
+    public async Task<ToolResult> Invoke(ToolCall toolCall)
     {
         var toolArguments = toolCall.function.arguments;
         workspace.Flags.PlanningIsDoneFlag = true;

@@ -1,9 +1,10 @@
 ﻿using MyCodingAgent.Models;
+using MyCodingAgent.Shared;
 
 namespace MyCodingAgent.Interfaces;
 
 public interface IAgent
 {
-    Task<OllamaPrompt> GeneratePrompt();
-    Task<bool> ProcessResponse(OllamaPrompt prompt, OllamaResponse agentResponse);
+    Task<Prompt> GeneratePrompt();
+    Task<bool> ProcessResponse(Prompt prompt, Response agentResponse);
 }

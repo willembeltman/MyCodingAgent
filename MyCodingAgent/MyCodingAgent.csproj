@@ -17,4 +17,9 @@
     <PackageReference Include="DiffPlex" Version="1.9.0" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\MyCodingAgent.OllamaClient\MyCodingAgent.OllamaClient.csproj" />
+    <ProjectReference Include="..\MyCodingAgent.Shared\MyCodingAgent.Shared.csproj" />
+  </ItemGroup>
+
 </Project>

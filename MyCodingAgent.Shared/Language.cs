@@ -1,4 +1,4 @@
-﻿namespace MyCodingAgent.Helpers;
+﻿namespace MyCodingAgent.Shared;
 
 public enum Language
 {

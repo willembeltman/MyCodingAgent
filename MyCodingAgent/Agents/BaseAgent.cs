@@ -1,19 +1,19 @@
-﻿using MyCodingAgent.Helpers;
-using MyCodingAgent.Interfaces;
+﻿using MyCodingAgent.Interfaces;
 using MyCodingAgent.Models;
+using MyCodingAgent.Shared;
 using System.Text.Json;
 
 namespace MyCodingAgent.Agents;
 
-public abstract class BaseAgent(Workspace Workspace, OllamaClient Client)
+public abstract class BaseAgent(Workspace Workspace, ILlmClient Client)
 {
     protected abstract List<PromptResponseResults> History { get; }
     protected abstract IToolCall[] Tools { get; }
 
     protected Workspace Workspace { get; } = Workspace;
-    protected OllamaClient Client { get; } = Client;
+    protected ILlmClient Client { get; } = Client;
 
-    protected static void AddHistoryAndToolCalls(List<OllamaMessage> messageList, List<PromptResponseResults> history, Tool[] tools, int maxTokens, int additionalSizeInBytes)
+    protected void AddHistoryAndToolCalls(List<Message> messageList, List<PromptResponseResults> history, Tool[] tools, int maxTokens, int additionalSizeInBytes)
     {
         var notNullHistory = history
             .Where(a =>
@@ -23,7 +23,7 @@ public abstract class BaseAgent(Workspace Workspace, OllamaClient Client)
 
         var messagesJson = JsonSerializer.Serialize(messageList, DefaultJsonSerializerOptions.JsonSerializeOptionsIndented);
         var messagesJsonLength = messagesJson.Length;
-        var toolsJson = OllamaClient.CreateToolsJson(tools);
+        var toolsJson = Client.CreateToolsJson(tools);
         var toolsJsonLength = toolsJson.Length;
         var maxHistory = 0;
         int maxLongDesciptionPrompt = 0;
@@ -122,7 +122,7 @@ public abstract class BaseAgent(Workspace Workspace, OllamaClient Client)
 
     }
 
-    private static OllamaMessage CleanMessage(OllamaMessage message)
+    private static Message CleanMessage(Message message)
     {
         var content = "Use tool_calls";
         if (message.tool_calls?.Any() == true)
@@ -134,7 +134,7 @@ public abstract class BaseAgent(Workspace Workspace, OllamaClient Client)
             content = message.content;
         }
 
-        return new OllamaMessage(
+        return new Message(
             message.role,
             message.tool_call_id,
             content,
@@ -142,17 +142,17 @@ public abstract class BaseAgent(Workspace Workspace, OllamaClient Client)
             message.tool_calls);
     }
 
-    private static OllamaMessage CreateToolCallbackMessage(bool useShortContent, ToolCallResult? toolCall)
+    private static Message CreateToolCallbackMessage(bool useShortContent, ToolCallResult? toolCall)
     {
-        return new OllamaMessage(
-            nameof(OllamaAgentRole.Tool).ToLower(),
+        return new Message(
+            nameof(AgentRole.Tool).ToLower(),
             toolCall?.tool_call.id,
             toolCall == null ? "Error: no tool_calls found" : useShortContent ? toolCall.result.shortContent : toolCall.result.content,
             null,
             null);
     }
 
-    protected async Task<PromptResponseResults> GetAgentResponseResult(OllamaPrompt prompt, OllamaResponse response, IToolCall[] tools)
+    protected async Task<PromptResponseResults> GetAgentResponseResult(Prompt prompt, Response response, IToolCall[] tools)
     {
         var list = new List<ToolCallResult>();
         if (response.message.tool_calls != null)

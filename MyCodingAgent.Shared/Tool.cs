@@ -1,4 +1,4 @@
-﻿namespace MyCodingAgent.Models;
+﻿namespace MyCodingAgent.Shared;
 
 public record Tool(
     string Name,

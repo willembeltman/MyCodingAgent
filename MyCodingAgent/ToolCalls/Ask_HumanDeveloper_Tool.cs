@@ -1,5 +1,6 @@
 ﻿using MyCodingAgent.Interfaces;
 using MyCodingAgent.Models;
+using MyCodingAgent.Shared;
 
 namespace MyCodingAgent.ToolCalls;
 
@@ -13,7 +14,7 @@ public class Ask_HumanDeveloper_Tool(Workspace workspace) : IToolCall
     [
         new ("content", "string", "question or information request for the human developer")
     ];
-    public async Task<ToolResult> Invoke(OllamaToolCall toolCall)
+    public async Task<ToolResult> Invoke(ToolCall toolCall)
     {
         var toolArguments = toolCall.function.arguments;
         if (toolArguments.content == null)
