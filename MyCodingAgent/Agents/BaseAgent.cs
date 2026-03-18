@@ -1,6 +1,9 @@
 ﻿using MyCodingAgent.Interfaces;
 using MyCodingAgent.Models;
 using MyCodingAgent.Shared;
+using MyCodingAgent.Shared.Enums;
+using MyCodingAgent.Shared.Interfaces;
+using MyCodingAgent.Shared.Models;
 using System.Text.Json;
 
 namespace MyCodingAgent.Agents;

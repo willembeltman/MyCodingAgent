@@ -1,5 +1,7 @@
-﻿using MyCodingAgent.Models;
+﻿using MyCodingAgent.OllamaClient.Models;
 using MyCodingAgent.Shared;
+using MyCodingAgent.Shared.Interfaces;
+using MyCodingAgent.Shared.Models;
 using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json;
@@ -37,7 +39,7 @@ public class Client(
                 a.size != null &&
                 a.modified_at != null))
         {
-            var maxTokenSize = await GetContextSize(model.name!, ct);
+            var maxTokenSize = 8192;// await GetContextSize(model.name!, ct);
             models.Add(new Model(
                 model.name!,
                 model.size!,
@@ -56,9 +58,13 @@ public class Client(
         var response = await HttpClient.PostAsync(url, content, ct);
         response.EnsureSuccessStatusCode();
 
-        await using var stream = await response.Content.ReadAsStreamAsync(ct);
 
-        var data = await JsonSerializer.DeserializeAsync<OllamaShowResponse>(stream, cancellationToken: ct);
+        var responseString =
+            await response.Content.ReadAsStringAsync();
+        var data = JsonSerializer.Deserialize<OllamaShowResponse>(responseString);
+
+        //await using var stream = await response.Content.ReadAsStreamAsync(ct);
+        //var data = await JsonSerializer.DeserializeAsync<OllamaShowResponse>(stream, cancellationToken: ct);
 
         return data?.parameters?.num_ctx;
     }
@@ -103,6 +109,9 @@ public class Client(
         var tools = CreateToolsJson(prompt.tools);
         var payload = $@"{{
   ""model"": ""{model.Name}"",
+  ""options"": {{
+    ""num_ctx"": 8192
+  }},
   ""messages"": {JsonSerializer.Serialize(messages, DefaultJsonSerializerOptions.JsonSerializeOptionsIndented)},
   ""stream"": false,
   ""tools"": [{tools}]

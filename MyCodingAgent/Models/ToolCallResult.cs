@@ -1,4 +1,4 @@
-﻿using MyCodingAgent.Shared;
+﻿using MyCodingAgent.Shared.Models;
 
 namespace MyCodingAgent.Models;
 

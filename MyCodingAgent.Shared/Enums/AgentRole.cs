@@ -1,5 +1,4 @@
-﻿
-namespace MyCodingAgent.Shared;
+﻿namespace MyCodingAgent.Shared.Enums;
 
 public enum AgentRole
 {

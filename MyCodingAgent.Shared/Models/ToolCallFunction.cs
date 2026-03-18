@@ -1,4 +1,4 @@
-﻿namespace MyCodingAgent.Shared;
+﻿namespace MyCodingAgent.Shared.Models;
 
 public record ToolCallFunction(
     string name,

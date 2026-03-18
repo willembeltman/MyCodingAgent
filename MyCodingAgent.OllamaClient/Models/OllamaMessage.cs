@@ -1,6 +1,6 @@
-﻿namespace MyCodingAgent.OllamaClient;
+﻿namespace MyCodingAgent.OllamaClient.Models;
 
-public record OllamaMessage(
+internal record OllamaMessage(
     string role,
     string? tool_call_id,
     string? content,

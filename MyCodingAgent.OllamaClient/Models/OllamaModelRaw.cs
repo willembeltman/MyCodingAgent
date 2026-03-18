@@ -1,6 +1,6 @@
-﻿namespace MyCodingAgent.OllamaClient;
+﻿namespace MyCodingAgent.OllamaClient.Models;
 
-public record OllamaModelRaw(
+internal record OllamaModelRaw(
     string? name,
     long? size,
     string? digest,

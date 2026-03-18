@@ -1,7 +1,7 @@
 ﻿using MyCodingAgent.Helpers;
 using MyCodingAgent.Interfaces;
 using MyCodingAgent.Models;
-using MyCodingAgent.Shared;
+using MyCodingAgent.Shared.Models;
 using System.Text;
 using System.Text.RegularExpressions;
 
@@ -17,8 +17,8 @@ public class WorkspaceReadonly_Tool(Workspace Workspace) : IToolCall
     [
         new ("action", "string", "Action to perform", 
         [
-            "files_list",
-            "open",
+            "list",
+            "search",
             "read", 
             "text_search",
             "compile", 
@@ -39,11 +39,19 @@ public class WorkspaceReadonly_Tool(Workspace Workspace) : IToolCall
 
         return toolArguments.action.ToLower() switch
         {
+            "dir" => await FilesList(toolCall),
+            "ls" => await FilesList(toolCall),
+            "list" => await FilesList(toolCall),
+            "file_list" => await FilesList(toolCall),
             "files_list" => await FilesList(toolCall),
+            "search" => await FilesList(toolCall),
             "open" => await Read(toolCall),
             "read" => await Read(toolCall),
+            "file_open" => await Read(toolCall),
+            "file_read" => await Read(toolCall),
             "text_search" => await TextSearch(toolCall),
             "compile" => await Compile(toolCall),
+            "diff" => await Diff(toolCall),
             "diff_with_original" => await Diff(toolCall),
             _ => new ToolResult(
                 $"Error could not find action '{toolArguments.action}'",
@@ -55,7 +63,7 @@ public class WorkspaceReadonly_Tool(Workspace Workspace) : IToolCall
     protected async Task<ToolResult> FilesList(ToolCall toolCall)
     {
         var toolArguments = toolCall.function.arguments;
-        var listAllFilesText = await Workspace.GetListAllFilesText();
+        var listAllFilesText = await Workspace.GetListAllFilesText(toolArguments.query);
         return new ToolResult(listAllFilesText, "Shown all files", false);
     }
     protected async Task<ToolResult> Read(ToolCall toolCall)

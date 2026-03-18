@@ -2,7 +2,7 @@
 using MyCodingAgent.Interfaces;
 using MyCodingAgent.Models;
 using MyCodingAgent.OllamaClient;
-using MyCodingAgent.Shared;
+using MyCodingAgent.Shared.Models;
 
 internal class Program : IDisposable
 {

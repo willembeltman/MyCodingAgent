@@ -1,6 +1,6 @@
-﻿namespace MyCodingAgent.OllamaClient;
+﻿namespace MyCodingAgent.Shared.Models;
 
-public record OllamaToolParameter(
+public record ToolParameter(
     string Name,
     string Type,
     string Description,

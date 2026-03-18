@@ -1,6 +1,6 @@
-﻿using MyCodingAgent.Shared;
+﻿using MyCodingAgent.Shared.Models;
 
-namespace MyCodingAgent.Shared;
+namespace MyCodingAgent.Shared.Interfaces;
 
 public interface ILlmClient
 {

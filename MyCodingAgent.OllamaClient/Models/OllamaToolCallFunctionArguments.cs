@@ -1,6 +1,6 @@
-﻿namespace MyCodingAgent.Shared;
+﻿namespace MyCodingAgent.OllamaClient.Models;
 
-public class ToolCallFunctionArguments
+internal class OllamaToolCallFunctionArguments
 {
     public string? id { get; set; }
     public string? action { get; set; }

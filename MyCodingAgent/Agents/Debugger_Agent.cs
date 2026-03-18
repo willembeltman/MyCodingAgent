@@ -3,7 +3,8 @@ using MyCodingAgent.Helpers;
 using MyCodingAgent.Interfaces;
 using MyCodingAgent.Models;
 using MyCodingAgent.OllamaClient;
-using MyCodingAgent.Shared;
+using MyCodingAgent.Shared.Enums;
+using MyCodingAgent.Shared.Models;
 using MyCodingAgent.ToolCalls;
 using MyCodingAgent.ToolCalls.AgentCommunication;
 

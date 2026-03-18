@@ -1,7 +1,7 @@
 ﻿using MyCodingAgent.Helpers;
 using MyCodingAgent.Interfaces;
 using MyCodingAgent.Models;
-using MyCodingAgent.Shared;
+using MyCodingAgent.Shared.Models;
 using System.Text;
 using System.Text.RegularExpressions;
 
@@ -15,8 +15,8 @@ public class Workspace_Tool(Workspace Workspace) : WorkspaceReadonly_Tool(Worksp
     [
         new ("action", "string", "Action to perform",
         [
-            "files_list",
-            "open",
+            "list",
+            "search",
             "read",
             "write",
             "append",
@@ -27,7 +27,7 @@ public class Workspace_Tool(Workspace Workspace) : WorkspaceReadonly_Tool(Worksp
             "compile",
             "diff_with_original"
         ]),
-        new ("path", "string", "File path, not used for 'files_list' action", null, true),
+        new ("path", "string", "File path, not used for 'list' action", null, true),
         new ("query", "string", "Exact text to find, for 'text_search' and 'text_search_and_replace' action", null, true),
         new ("content", "string", "Content for 'write', 'append' and 'text_search_and_replace' action", null, true),
         new ("newPath", "string", "Destination path for 'move' action", null, true),
@@ -45,15 +45,30 @@ public class Workspace_Tool(Workspace Workspace) : WorkspaceReadonly_Tool(Worksp
 
         return toolArguments.action.ToLower() switch
         {
+            "dir" => await FilesList(toolCall),
+            "ls" => await FilesList(toolCall),
+            "list" => await FilesList(toolCall),
+            "file_list" => await FilesList(toolCall),
             "files_list" => await FilesList(toolCall),
+            "search" => await FilesList(toolCall),
             "open" => await Read(toolCall),
             "read" => await Read(toolCall),
+            "create" => await Write(toolCall),
             "write" => await Write(toolCall),
-            "text_search" => await TextSearch(toolCall),
-            "text_search_and_replace" => await TextSearchAndReplace(toolCall),
+            "append" => await Append(toolCall),
             "delete" => await Delete(toolCall),
             "move" => await Move(toolCall),
+            "file_create" => await Write(toolCall),
+            "file_open" => await Read(toolCall),
+            "file_read" => await Read(toolCall),
+            "file_write" => await Write(toolCall),
+            "file_append" => await Append(toolCall),
+            "file_delete" => await Delete(toolCall),
+            "file_move" => await Move(toolCall),
+            "text_search" => await TextSearch(toolCall),
+            "text_search_and_replace" => await TextSearchAndReplace(toolCall),
             "compile" => await Compile(toolCall),
+            "diff" => await Diff(toolCall),
             "diff_with_original" => await Diff(toolCall),
             _ => new ToolResult(
                 $"Error could not find action '{toolArguments.action}'",
@@ -112,7 +127,52 @@ public class Workspace_Tool(Workspace Workspace) : WorkspaceReadonly_Tool(Worksp
                 $"Error while updating",
                 true);
         }
-    }    
+    }
+    private async Task<ToolResult> Append(ToolCall toolCall)
+    {
+        var toolArguments = toolCall.function.arguments;
+        if (toolArguments.path == null)
+            return new ToolResult(
+                "parameter path is not supplied.",
+                "parameter path is not supplied.",
+                true);
+        if (toolArguments.lineNumber == null)
+            return new ToolResult(
+                "parameter startLine is not supplied.",
+                "parameter startLine is not supplied.",
+                true);
+        if (toolArguments.content == null)
+            return new ToolResult(
+                "parameter content is not supplied.",
+                "parameter content is not supplied.",
+                true);
+
+        var file = Workspace.GetFile(toolArguments.path);
+        if (file == null)
+            return new ToolResult(
+                $"Error could not find file '{toolArguments.path}'",
+                $"Error could not find file",
+                true);
+
+        try
+        {
+            await file.UpdateContent(
+                toolArguments.lineNumber.Value,
+                -1,
+                toolArguments.content);
+            return new ToolResult(
+                $"Appended file '{toolArguments.path}': \r\n{toolArguments.content}",
+                $"Appended file",
+                false);
+        }
+        catch (Exception ex)
+        {
+            return new ToolResult(
+                $"Error while updating file '{toolArguments.path}': {ex.Message}",
+                $"Error while updating file",
+                true);
+        }
+    }
     private async Task<ToolResult> TextSearchAndReplace(ToolCall toolCall)
     {
         var toolArguments = toolCall.function.arguments;

@@ -2,6 +2,7 @@
 using MyCodingAgent.ToolCalls.AgentCommunication.Models;
 using System.Text;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 
 namespace MyCodingAgent.Models;
 
@@ -43,6 +44,10 @@ public class Workspace
         {
             current = SubTasks.FirstOrDefault(a => a.Finished == false);
             CurrentSubTask = current?.Id;
+            if (current != null)
+            {
+                CodingHistory.Clear();
+            }
         }
         return current;
     }
@@ -59,6 +64,7 @@ public class Workspace
             }
             if (workspace != null)
             {
+                workspace.RootDirectoryName = rootDirectoryName;
                 await InitializeWorkspace(workspace);
             }
         }
@@ -162,12 +168,20 @@ public class Workspace
             return compileResult;
         }
     }
-    public async Task<string> GetListAllFilesText()
+    public async Task<string> GetListAllFilesText(string? query)
     {
         StringBuilder sb = new StringBuilder();
-        if (Files.Count > 0)
+        var files = Files;
+        if (!string.IsNullOrWhiteSpace(query))
         {
-            foreach (var file in Files)
+            sb.AppendLine($"query: '{query}'");
+            files = files
+                .Where(f => MatchesPattern(f.RelativePath, query))
+                .ToList();
+        }
+        if (files.Count > 0)
+        {
+            foreach (var file in files)
             {
                 var fileContent = await file.GetFileContent();
                 sb.AppendLine($"{file.RelativePath} ({fileContent.GetLineCount()} lines)");
@@ -179,6 +193,15 @@ public class Workspace
         }
         return sb.ToString();
     }
+    private bool MatchesPattern(string input, string pattern)
+    {
+        var regex = "^" + Regex.Escape(pattern)
+            .Replace("\\*", ".*")
+            .Replace("\\?", ".") + "$";
+
+        return Regex.IsMatch(input, regex, RegexOptions.IgnoreCase);
+    }
+
     public async Task<string> GetListAllSubTasksText()
     {
         StringBuilder sb = new StringBuilder();
