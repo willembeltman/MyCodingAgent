@@ -1,8 +1,7 @@
-﻿using MyCodingAgent.Interfaces;
+﻿using MyCodingAgent.Shared.Interfaces;
 using MyCodingAgent.Models;
 using MyCodingAgent.Shared.Enums;
 using MyCodingAgent.Shared.Helpers;
-using MyCodingAgent.Shared.Interfaces;
 using MyCodingAgent.Shared.Models;
 using MyCodingAgent.ToolCalls;
 using MyCodingAgent.ToolCalls.AgentCommunication;
@@ -12,7 +11,7 @@ namespace MyCodingAgent.Agents;
 
 public class CoderForDebugger_Agent : BaseAgent, IAgent
 {
-    public CoderForDebugger_Agent(ILlmClient client, Workspace workspace, Model model) : base(client, workspace, model)
+    public CoderForDebugger_Agent(IClient client, Workspace workspace, Model model) : base(client, workspace, model)
     {
         WorkspaceTool = new WorkspaceReadonly_Tool(workspace);
         AnswerDebugAgentTool = new DebuggerNeedsCoderAnswer_Tool(workspace);

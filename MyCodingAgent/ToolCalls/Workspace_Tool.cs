@@ -1,5 +1,5 @@
 ﻿using MyCodingAgent.Helpers;
-using MyCodingAgent.Interfaces;
+using MyCodingAgent.Shared.Interfaces;
 using MyCodingAgent.Models;
 using MyCodingAgent.Shared.Models;
 using System.Text;

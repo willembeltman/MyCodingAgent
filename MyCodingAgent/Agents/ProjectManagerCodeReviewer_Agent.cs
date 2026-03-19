@@ -1,7 +1,6 @@
-﻿using MyCodingAgent.Interfaces;
+﻿using MyCodingAgent.Shared.Interfaces;
 using MyCodingAgent.Models;
 using MyCodingAgent.Shared.Enums;
-using MyCodingAgent.Shared.Interfaces;
 using MyCodingAgent.Shared.Models;
 using MyCodingAgent.ToolCalls;
 
@@ -9,7 +8,7 @@ namespace MyCodingAgent.Agents;
 
 public class ProjectManagerCodeReviewer_Agent : BaseAgent, IAgent
 {
-    public ProjectManagerCodeReviewer_Agent(ILlmClient client, Workspace workspace, Model model) 
+    public ProjectManagerCodeReviewer_Agent(IClient client, Workspace workspace, Model model) 
         : base(client, workspace, model)
     {
         WorkspaceTool = new WorkspaceReadonly_Tool(workspace);

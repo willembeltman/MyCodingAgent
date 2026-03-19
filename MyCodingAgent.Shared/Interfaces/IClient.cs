@@ -2,7 +2,7 @@
 
 namespace MyCodingAgent.Shared.Interfaces;
 
-public interface ILlmClient : IDisposable
+public interface IClient : IDisposable
 {
     Task<Response> ChatAsync(Model model, Prompt prompt, CancellationToken ct = default);
     Task<Model[]> GetModels(CancellationToken ct = default);

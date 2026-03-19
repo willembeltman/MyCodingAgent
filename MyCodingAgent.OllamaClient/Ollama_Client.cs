@@ -10,7 +10,7 @@ namespace MyCodingAgent.OllamaClient;
 public class Ollama_Client(
     Uri? ollamaServerUrl = null)
     : IDisposable
-    , ILlmClient
+    , IClient
 {
     private readonly HttpClient HttpClient = new() { Timeout = TimeSpan.FromSeconds(3600) };
     private readonly Uri OllamaServerUrl = ollamaServerUrl ?? new Uri("http://localhost:11434");
@@ -140,7 +140,6 @@ public class Ollama_Client(
                 ]));
     }
 
-
     private async Task<string> DoCall(string payload, CancellationToken ct)
     {
         var url = new Uri(OllamaServerUrl, "/api/chat");
@@ -161,53 +160,40 @@ public class Ollama_Client(
 
     public string CreateMessagesJson(Message[] messages)
     {
-        OllamaMessage[] ollamaMessages =
-            [
-                ..messages.Select(a =>
-                    new OllamaMessage(
-                        a.role,
-                        a.tool_call_id,
-                        a.content,
-                        a.thinking,// Wordt eruit gefilterd
-                        a.tool_calls == null? null :
-                        [
-                            ..a.tool_calls.Select(b =>
-                                new OllamaToolCall(
-                                    b.id,
-                                    new OllamaToolCallFunction(
-                                        b.function.name,
-                                        new OllamaToolCallFunctionArguments(
-                                            b.function.arguments.id,
-                                            b.function.arguments.action,
-                                            b.function.arguments.path,
-                                            b.function.arguments.newPath,
-                                            b.function.arguments.query,
-                                            b.function.arguments.content,
-                                            b.function.arguments.replaceText,
-                                            b.function.arguments.lineNumber))))
-                        ]))
-            ];
+        var ollamaMessages = messages.Select(a =>
+            new
+            {
+                role = a.role,
+                tool_call_id = a.tool_call_id,
+                content = a.content,
+                tool_calls = a.tool_calls == null ? null :
+                    a.tool_calls.Select(b =>
+                        new
+                        {
+                            id = b.id,
+                            function = new
+                            {
+                                name = b.function.name,
+                                arguments = new
+                                {
+                                    id = b.function.arguments.id,
+                                    action = b.function.arguments.action,
+                                    path = b.function.arguments.path,
+                                    newPath = b.function.arguments.newPath,
+                                    query = b.function.arguments.query,
+                                    content = b.function.arguments.content,
+                                    replaceText = b.function.arguments.replaceText,
+                                    lineNumber = b.function.arguments.lineNumber
+                                }
+                            }
+                        })
+            });
         var messagesJson = JsonSerializer.Serialize(ollamaMessages, DefaultJsonSerializerOptions.JsonSerializeOptionsIndented);
         return messagesJson;
     }
     public string CreateToolsJson(Tool[] tools)
     {
-        OllamaTool[] ollamaTools =
-        [
-            ..tools.Select(a =>
-                new OllamaTool(
-                    a.Name,
-                    a.Desciption,
-                    [ ..a.Parameters.Select(b =>
-                        new OllamaToolParameter(
-                            b.Name,
-                            b.Type,
-                            b.Description,
-                            b.Enum,
-                            b.Optional))
-                    ]))
-        ];
-        return string.Join(",", ollamaTools.Select(tool => $@"
+        return string.Join(",", tools.Select(tool => $@"
   {{
     ""type"": ""function"",
     ""function"": {{
@@ -248,13 +234,6 @@ public class Ollama_Client(
 
 }
 
-internal record OllamaMessage(
-    string role,
-    string? tool_call_id,
-    string? content,
-    string? thinking,
-    OllamaToolCall[]? tool_calls);
-
 internal record OllamaModelRaw(
     string? name,
     long? size,
@@ -264,19 +243,16 @@ internal record OllamaModelRaw(
 internal record OllamaModelRawCollection(
     OllamaModelRaw[]? models);
 
-internal record OllamaPrompt(
-    OllamaMessage[] messages,
-    OllamaTool[] tools);
-
 internal record OllamaResponse(
     string model,
     DateTime created_at,
     OllamaMessage message);
-
-internal record OllamaTool(
-    string Name,
-    string Desciption,
-    OllamaToolParameter[] Parameters);
+internal record OllamaMessage(
+    string role,
+    string? tool_call_id,
+    string? content,
+    string? thinking,
+    OllamaToolCall[]? tool_calls);
 
 internal record OllamaToolCall(
     string id,
@@ -296,10 +272,3 @@ internal record OllamaToolCallFunctionArguments(
     string? content,
     string? replaceText,
     int? lineNumber);
-
-internal record OllamaToolParameter(
-    string Name,
-    string Type,
-    string Description,
-    string[]? Enum = null,
-    bool Optional = false);

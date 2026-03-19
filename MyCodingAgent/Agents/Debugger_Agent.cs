@@ -1,15 +1,14 @@
 ﻿using MyCodingAgent.Agents;
-using MyCodingAgent.Interfaces;
+using MyCodingAgent.Shared.Interfaces;
 using MyCodingAgent.Models;
 using MyCodingAgent.Shared.Enums;
-using MyCodingAgent.Shared.Interfaces;
 using MyCodingAgent.Shared.Models;
 using MyCodingAgent.ToolCalls;
 using MyCodingAgent.ToolCalls.AgentCommunication;
 
 public class Debugger_Agent : BaseAgent, IAgent
 {
-    public Debugger_Agent(ILlmClient client, Workspace workspace, Model model) : base(client, workspace, model)
+    public Debugger_Agent(IClient client, Workspace workspace, Model model) : base(client, workspace, model)
     {
         WorkspaceTool = new Workspace_Tool(workspace);
         DebugAgentIsDoneTool = new DebuggingIsDone_Tool(workspace);

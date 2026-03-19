@@ -7,7 +7,7 @@ using System.Text.Json;
 
 namespace MyCodingAgent.OpenAiClient;
 
-public class ChatGpt_Client : IDisposable, ILlmClient
+public class ChatGpt_Client : IDisposable, IClient
 {
     private readonly HttpClient HttpClient;
     private readonly string OpenAiApiKey;
@@ -154,7 +154,7 @@ public class ChatGpt_Client : IDisposable, ILlmClient
 
     public string CreateMessagesJson(Message[] messages)
     {
-        var ollamaMessages = messages.Select(m => new
+        var openAiMessages = messages.Select(m => new
         {
             role = m.role,
             tool_call_id = m.tool_call_id,
@@ -172,12 +172,12 @@ public class ChatGpt_Client : IDisposable, ILlmClient
         }).ToArray();
 
         return JsonSerializer.Serialize(
-            ollamaMessages,
+            openAiMessages,
             DefaultJsonSerializerOptions.JsonSerializeOptionsIndented);
     }
     public string CreateToolsJson(Tool[] tools)
     {
-        var ollamaTools = tools.Select(tool => new
+        var openAiTools = tools.Select(tool => new
         {
             Name = tool.Name,
             Description = tool.Desciption,
@@ -192,7 +192,7 @@ public class ChatGpt_Client : IDisposable, ILlmClient
         }).ToArray();
 
         return JsonSerializer.Serialize(
-            ollamaTools,
+            openAiTools,
             DefaultJsonSerializerOptions.JsonSerializeOptionsIndented);
     }
 
@@ -219,66 +219,10 @@ public class ChatGpt_Client : IDisposable, ILlmClient
         {
             model = model.Name,
             messages = prompt.messages.Select(m => new { role = m.role, content = m.content }).ToArray(),
-            functions
+            functions = functions
         };
 
         var payloadJson = JsonSerializer.Serialize(payload, DefaultJsonSerializerOptions.JsonSerializeOptionsIndented);
         return payloadJson;
     }
 }
-
-internal record OllamaMessage(
-    string role,
-    string? tool_call_id,
-    string? content,
-    string? thinking,
-    OllamaToolCall[]? tool_calls);
-
-internal record OllamaModelRaw(
-    string? name,
-    long? size,
-    string? digest,
-    DateTime? modified_at);
-
-internal record OllamaModelRawCollection(
-    OllamaModelRaw[]? models);
-
-internal record OllamaPrompt(
-    OllamaMessage[] messages,
-    OllamaTool[] tools);
-
-internal record OllamaResponse(
-    string model,
-    DateTime created_at,
-    OllamaMessage message);
-
-internal record OllamaTool(
-    string Name,
-    string Desciption,
-    OllamaToolParameter[] Parameters);
-
-internal record OllamaToolCall(
-    string id,
-    OllamaToolCallFunction function);
-
-internal record OllamaToolCallFunction(
-    //int? index,
-    string name,
-    OllamaToolCallFunctionArguments arguments);
-
-internal record OllamaToolCallFunctionArguments(
-    string? id,
-    string? action,
-    string? path,
-    string? newPath,
-    string? query,
-    string? content,
-    string? replaceText,
-    int? lineNumber);
-
-internal record OllamaToolParameter(
-    string Name,
-    string Type,
-    string Description,
-    string[]? Enum = null,
-    bool Optional = false);

@@ -1,19 +1,18 @@
-﻿using MyCodingAgent.Interfaces;
+﻿using MyCodingAgent.Shared.Interfaces;
 using MyCodingAgent.Models;
 using MyCodingAgent.Shared.Enums;
 using MyCodingAgent.Shared.Helpers;
-using MyCodingAgent.Shared.Interfaces;
 using MyCodingAgent.Shared.Models;
 using System.Text.Json;
 
 namespace MyCodingAgent.Agents;
 
-public abstract class BaseAgent(ILlmClient Client, Workspace Workspace, Model model)
+public abstract class BaseAgent(IClient Client, Workspace Workspace, Model model)
 {
     protected abstract List<PromptResponseResults> History { get; }
     protected abstract IToolCall[] Tools { get; }
 
-    protected ILlmClient Client { get; } = Client;
+    protected IClient Client { get; } = Client;
     protected Workspace Workspace { get; } = Workspace;
     protected Model Model { get; } = model;
 

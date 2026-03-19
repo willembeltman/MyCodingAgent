@@ -5,7 +5,7 @@ using MyCodingAgent.Shared.Models;
 
 public class Team
 {
-    public Team(ILlmClient client, Workspace workspace, Model model)
+    public Team(IClient client, Workspace workspace, Model model)
     {
         codingAgent = new Coder_Agent(client, workspace, model);
         codingForDebugAgent = new CoderForDebugger_Agent(client, workspace, model);

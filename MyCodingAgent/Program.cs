@@ -1,16 +1,15 @@
 ﻿using Microsoft.Extensions.Configuration;
 using MyCodingAgent.Agents;
-using MyCodingAgent.Interfaces;
+using MyCodingAgent.Shared.Interfaces;
 using MyCodingAgent.Models;
 using MyCodingAgent.OllamaClient;
 using MyCodingAgent.OpenAiClient;
-using MyCodingAgent.Shared.Interfaces;
 using MyCodingAgent.Shared.Models;
 
 internal class Program : IDisposable
 {
     readonly CancellationTokenSource Cts;
-    readonly ILlmClient LlmService;
+    readonly IClient LlmService;
 
     private Program()
     {
