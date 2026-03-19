@@ -39,7 +39,9 @@ internal class Program : IDisposable
         Console.WriteLine("Appsettings loaded, loading workspace, please wait...");
 
         Cts = new CancellationTokenSource();
-        LlmService = new ChatGpt_Client(apiKey);
+        LlmService =
+            //new ChatGpt_Client(apiKey);
+            new Ollama_Client();
     }
 
     private async Task StartAsync()
@@ -269,13 +271,15 @@ internal class Program : IDisposable
         while (!hasToolCalls)
         {
             Console.Clear();
-            await Task.Delay(250);
-            Console.Clear();
+            Console.WriteLine("\x1b[3J");
 
             var prompt = await agent.GeneratePrompt();
             foreach (var message in prompt.messages)
                 ShowMessage(message);
             Console.WriteLine();
+
+            string requestJson = LlmService.CreateRequestJson(model, prompt);
+            Console.WriteLine(requestJson);
 
             var response = await LlmService.ChatAsync(model, prompt);
             ShowMessage(response.message);
@@ -379,31 +383,31 @@ internal class Program : IDisposable
             foreach (var call in message.tool_calls)
             {
                 Console.ForegroundColor = ConsoleColor.White;
-                Console.WriteLine($"{call.function.name.ToUpper()}");
+                Console.WriteLine($"tool: {call.function.name.ToUpper()}");
 
-                if (call.function.arguments.action != null)
+                if (!string.IsNullOrWhiteSpace( call.function.arguments.action))
                     Console.WriteLine($"action: {call.function.arguments.action.ToUpper()}");
 
                 Console.ForegroundColor = ConsoleColor.Red;
-                if (call.function.arguments.id != null)
+                if (!string.IsNullOrWhiteSpace(call.function.arguments.id))
                     Console.WriteLine($"id: {call.function.arguments.id}");
 
-                if (call.function.arguments.path != null)
+                if (!string.IsNullOrWhiteSpace(call.function.arguments.path))
                     Console.WriteLine($"path: {call.function.arguments.path}");
 
-                if (call.function.arguments.query != null)
+                if (!string.IsNullOrWhiteSpace(call.function.arguments.query))
                     Console.WriteLine($"query: {call.function.arguments.query}");
 
                 if (call.function.arguments.lineNumber != null)
                     Console.WriteLine($"lineNumber: {call.function.arguments.lineNumber}");
 
-                if (call.function.arguments.newPath != null)
+                if (!string.IsNullOrWhiteSpace(call.function.arguments.newPath))
                     Console.WriteLine($"newPath: {call.function.arguments.newPath}");
 
-                if (call.function.arguments.content != null)
+                if (!string.IsNullOrWhiteSpace(call.function.arguments.content))
                     Console.WriteLine($"content: {call.function.arguments.content}");
 
-                if (call.function.arguments.replaceText != null)
+                if (!string.IsNullOrWhiteSpace(call.function.arguments.replaceText))
                     Console.WriteLine($"replaceText: {call.function.arguments.replaceText}");
             }
         }

@@ -58,15 +58,21 @@ public class Workspace_Tool(Workspace Workspace) : WorkspaceReadonly_Tool(Worksp
             "write" => await Write(toolCall),
             "append" => await Append(toolCall),
             "delete" => await Delete(toolCall),
+            "remove" => await Delete(toolCall),
             "move" => await Move(toolCall),
+            "replace" => await TextSearchAndReplace(toolCall),
+            "insert" => await Append(toolCall),
             "file_create" => await Write(toolCall),
             "file_open" => await Read(toolCall),
             "file_read" => await Read(toolCall),
             "file_write" => await Write(toolCall),
             "file_append" => await Append(toolCall),
             "file_delete" => await Delete(toolCall),
+            "file_remove" => await Delete(toolCall),
             "file_move" => await Move(toolCall),
             "text_search" => await TextSearch(toolCall),
+            "text_replace" => await TextSearchAndReplace(toolCall),
+            "text_insert" => await Append(toolCall),
             "text_search_and_replace" => await TextSearchAndReplace(toolCall),
             "compile" => await Compile(toolCall),
             "diff" => await Diff(toolCall),
@@ -201,7 +207,7 @@ public class Workspace_Tool(Workspace Workspace) : WorkspaceReadonly_Tool(Worksp
                 true);
 
         var content = await file.GetFileContent();
-        var fileChanges = Regex.Matches(content, Regex.Escape(toolArguments.query)).Count;
+        var fileChanges = Regex.Count(content, Regex.Escape(toolArguments.query));
         content = content.Replace(toolArguments.query, toolArguments.replaceText);
 
         if (fileChanges > 0)
@@ -223,7 +229,7 @@ public class Workspace_Tool(Workspace Workspace) : WorkspaceReadonly_Tool(Worksp
                 "Error parameter path is not supplied",
                 true);
 
-        Workspace.GaurdParseFullPath(toolArguments.path, out var fullPath);
+        Workspace.GaurdParseFullPath(toolArguments.path, out var _);
 
         try
         {

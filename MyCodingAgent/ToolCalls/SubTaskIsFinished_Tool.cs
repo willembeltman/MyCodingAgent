@@ -18,9 +18,8 @@ public class SubTaskIsFinished_Tool(Workspace workspace) : IToolCall
     {
         var toolArguments = toolCall.function.arguments;
 
-        var subtask = workspace.GetCurrentSubTask();
-        if (subtask == null)
-            throw new Exception("wtf?");
+        var subtask = workspace.GetCurrentSubTask()
+            ?? throw new Exception("wtf?");
 
         try
         {

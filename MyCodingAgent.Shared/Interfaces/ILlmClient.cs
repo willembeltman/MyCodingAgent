@@ -10,4 +10,5 @@ public interface ILlmClient : IDisposable
     Task<string> Translate(Model model, Language toLanguage, string content, bool overwrite, CancellationToken ct = default);
     string CreateToolsJson(Tool[] tools);
     string CreateMessagesJson(Message[] messages);
+    string CreateRequestJson(Model model, Prompt prompt);
 }

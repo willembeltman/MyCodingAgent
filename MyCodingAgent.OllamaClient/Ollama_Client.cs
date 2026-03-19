@@ -105,35 +105,27 @@ public class Ollama_Client(
     }
     public async Task<Response> ChatAsync(Model model, Prompt prompt, CancellationToken ct = default)
     {
-        var payload = $@"{{
-  ""model"": ""{model.Name}"",
-  ""options"": {{
-    ""num_ctx"": 8192
-  }},
-  ""messages"": {CreateMessagesJson(prompt.messages)},
-  ""stream"": false,
-  ""tools"": [{CreateToolsJson(prompt.tools)}]
-}}";
+        string payload = CreateRequestJson(model, prompt);
 
-        var json = await DoCall(payload, ct);
+        var reponseJson = await DoCall(payload, ct);
 
-        var agentResponse =
-            JsonSerializer.Deserialize<OllamaResponse>(json)
+        var response =
+            JsonSerializer.Deserialize<OllamaResponse>(reponseJson)
             ?? throw new Exception("Something is not right");
 
         return new Response(
-            agentResponse.model,
-            agentResponse.created_at,
+            response.model,
+            response.created_at,
             new Message(
-                agentResponse.message.role,
-                agentResponse.message.tool_call_id,
-                agentResponse.message.content,
-                agentResponse.message.thinking,
-                agentResponse.message.tool_calls == null
+                response.message.role,
+                response.message.tool_call_id,
+                response.message.content,
+                response.message.thinking,
+                response.message.tool_calls == null
                 ? (ToolCall[]?)null
                 :
                 [
-                    ..agentResponse.message.tool_calls.Select(a =>
+                    ..response.message.tool_calls.Select(a =>
                         new ToolCall(a.id, new ToolCallFunction(a.function.name, new ToolCallFunctionArguments()
                         {
                             action = a.function.arguments.action,
@@ -147,6 +139,8 @@ public class Ollama_Client(
                         })))
                 ]));
     }
+
+
     private async Task<string> DoCall(string payload, CancellationToken ct)
     {
         var url = new Uri(OllamaServerUrl, "/api/chat");
@@ -233,12 +227,25 @@ public class Ollama_Client(
     }}
   }}"));
     }
+    public string CreateRequestJson(Model model, Prompt prompt)
+    {
+        return $@"{{
+  ""model"": ""{model.Name}"",
+  ""options"": {{
+    ""num_ctx"": 8192
+  }},
+  ""messages"": {CreateMessagesJson(prompt.messages)},
+  ""stream"": false,
+  ""tools"": [{CreateToolsJson(prompt.tools)}]
+}}";
+    }
 
     public void Dispose()
     {
         HttpClient.Dispose();
         GC.SuppressFinalize(this);
     }
+
 }
 
 internal record OllamaMessage(

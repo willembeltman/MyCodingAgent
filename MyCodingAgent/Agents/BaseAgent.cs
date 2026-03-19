@@ -22,7 +22,7 @@ public abstract class BaseAgent(ILlmClient Client, Workspace Workspace, Model mo
         var notNullHistory = history
             .Where(a =>
                 string.IsNullOrWhiteSpace(a.Response.message.content) == false ||
-                (a.Response.message.tool_calls != null && a.Response.message.tool_calls.Any()))
+                (a.Response.message.tool_calls != null && a.Response.message.tool_calls.Length > 0))
             .ToList();
 
         var messagesJson = JsonSerializer.Serialize(messageList, DefaultJsonSerializerOptions.JsonSerializeOptionsIndented);
@@ -45,7 +45,7 @@ public abstract class BaseAgent(ILlmClient Client, Workspace Workspace, Model mo
             totalLength += responseJson.Length;
 
             // TOOL CALLS REPLIES
-            if (responseResult.ToolCallResults.Any())
+            if (responseResult.ToolCallResults.Count > 0)
             {
                 foreach (var toolCall in responseResult.ToolCallResults)
                 {
@@ -56,8 +56,8 @@ public abstract class BaseAgent(ILlmClient Client, Workspace Workspace, Model mo
                         toolCall.tool_call.function.arguments.path,
                         toolCall.tool_call.function.arguments.newPath,
                         toolCall.tool_call.function.arguments.query,
-                        toolCall.tool_call.function.arguments.content,
-                        toolCall.tool_call.function.arguments.replaceText,
+                        "", //toolCall.tool_call.function.arguments.content,
+                        "", //toolCall.tool_call.function.arguments.replaceText,
                         toolCall.tool_call.function.arguments.lineNumber);
                     if (!shownMessages.Add(cacheMessage)) // Todo, als het model ooit meerdere actions gaat uitvoeren
                     {
@@ -76,14 +76,14 @@ public abstract class BaseAgent(ILlmClient Client, Workspace Workspace, Model mo
                 totalLength += messageJson.Length;
             }
 
-            if (totalLength < (Model.MaxTokenSize ?? 4096) * 3)
+            if (totalLength < (Model.MaxTokenSize ?? 4096) * 5 / 2)
                 maxLongDesciptionPrompt++;
             else
             {
                 useShortContent = true;
             }
 
-            if (totalLength < (Model.MaxTokenSize ?? 4096) * 3)
+            if (totalLength < (Model.MaxTokenSize ?? 4096) * 7 / 2)
                 maxHistory++;
             else
             {
@@ -104,7 +104,7 @@ public abstract class BaseAgent(ILlmClient Client, Workspace Workspace, Model mo
             messageList.Add(CleanMessage(responseResult.Response.message));
 
             // TOOL CALLS REPLIES
-            if (responseResult.ToolCallResults.Any())
+            if (responseResult.ToolCallResults.Count > 0)
             {
                 foreach (var toolCall in responseResult.ToolCallResults)
                 {
@@ -129,7 +129,7 @@ public abstract class BaseAgent(ILlmClient Client, Workspace Workspace, Model mo
     private static Message CleanMessage(Message message)
     {
         var content = "Use tool_calls";
-        if (message.tool_calls?.Any() == true)
+        if (message.tool_calls?.Length > 0 == true)
         {
             content = string.Join(", ", message.tool_calls.Select(a => a.id));
         }
@@ -137,13 +137,37 @@ public abstract class BaseAgent(ILlmClient Client, Workspace Workspace, Model mo
         {
             content = message.content;
         }
+        var toolCalls = (ToolCall[]?)null;
+        if (message.tool_calls != null)
+        {
+            toolCalls =
+            [
+                .. message.tool_calls.Select(a =>
+                    new ToolCall(
+                        a.id,
+                        new ToolCallFunction(
+                            a.function.name,
+                            new ToolCallFunctionArguments()
+                            {
+                                action = a.function.arguments.action,
+                                id = a.function.arguments.id,
+                                lineNumber = a.function.arguments.lineNumber,
+                                newPath = a.function.arguments.newPath,
+                                path = a.function.arguments.path,
+                                query = a.function.arguments.query,
+                                //replaceText = a.function.arguments.replaceText,
+                                //content = a.function.arguments.content
+                            })))
+            ];
+        }
+
 
         return new Message(
             message.role,
-            message.tool_call_id,
+            null,
             content,
             null,
-            message.tool_calls);
+            toolCalls);
     }
 
     private static Message CreateToolCallbackMessage(bool useShortContent, ToolCallResult? toolCall)
@@ -156,7 +180,7 @@ public abstract class BaseAgent(ILlmClient Client, Workspace Workspace, Model mo
             null);
     }
 
-    protected async Task<PromptResponseResults> GetAgentResponseResult(Prompt prompt, Response response, IToolCall[] tools)
+    protected static async Task<PromptResponseResults> GetAgentResponseResult(Prompt prompt, Response response, IToolCall[] tools)
     {
         var list = new List<ToolCallResult>();
         if (response.message.tool_calls != null)

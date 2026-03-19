@@ -72,7 +72,8 @@ public class ChatGpt_Client : IDisposable, ILlmClient
             max_tokens = 8192
         };
 
-        var json = await DoCall(payload, ct);
+        var payloadJson = JsonSerializer.Serialize(payload, DefaultJsonSerializerOptions.JsonSerializeOptionsIndented);
+        var json = await DoCall(payloadJson, ct);
         var doc = JsonDocument.Parse(json);
         var translated = doc.RootElement
             .GetProperty("choices")[0]
@@ -88,33 +89,10 @@ public class ChatGpt_Client : IDisposable, ILlmClient
 
     public async Task<Response> ChatAsync(Model model, Prompt prompt, CancellationToken ct = default)
     {
-        var functions = prompt.tools.Select(tool => new
-        {
-            name = tool.Name,
-            description = tool.Desciption,
-            parameters = new
-            {
-                type = "object",
-                properties = tool.Parameters.ToDictionary(p => p.Name, p => new
-                {
-                    type = p.Type,
-                    description = p.Description,
-                    @enum = p.Enum
-                }),
-                required = tool.Parameters.Where(p => !p.Optional).Select(p => p.Name).ToArray()
-            }
-        }).ToArray();
+        string payloadJson = CreateRequestJson(model, prompt);
 
-        var payload = new
-        {
-            model = model.Name,
-            messages = prompt.messages.Select(m => new { role = m.role, content = m.content }).ToArray(),
-            functions,
-            max_tokens = 8192
-        };
-
-        var json = await DoCall(payload, ct);
-        var doc = JsonDocument.Parse(json);
+        var responseJson = await DoCall(payloadJson, ct);
+        var doc = JsonDocument.Parse(responseJson);
 
         var choice = doc.RootElement.GetProperty("choices")[0];
         var msg = choice.GetProperty("message");
@@ -151,12 +129,13 @@ public class ChatGpt_Client : IDisposable, ILlmClient
         );
     }
 
-    private async Task<string> DoCall(object payload, CancellationToken ct)
+
+    private async Task<string> DoCall(string payloadJson, CancellationToken ct)
     {
         var request = new HttpRequestMessage(HttpMethod.Post, "https://api.openai.com/v1/chat/completions")
         {
             Content = new StringContent(
-                JsonSerializer.Serialize(payload, DefaultJsonSerializerOptions.JsonSerializeOptionsIndented),
+                payloadJson,
                 Encoding.UTF8,
                 "application/json")
         };
@@ -172,6 +151,7 @@ public class ChatGpt_Client : IDisposable, ILlmClient
         HttpClient.Dispose();
         GC.SuppressFinalize(this);
     }
+
     public string CreateMessagesJson(Message[] messages)
     {
         var ollamaMessages = messages.Select(m => new
@@ -195,7 +175,6 @@ public class ChatGpt_Client : IDisposable, ILlmClient
             ollamaMessages,
             DefaultJsonSerializerOptions.JsonSerializeOptionsIndented);
     }
-
     public string CreateToolsJson(Tool[] tools)
     {
         var ollamaTools = tools.Select(tool => new
@@ -215,6 +194,36 @@ public class ChatGpt_Client : IDisposable, ILlmClient
         return JsonSerializer.Serialize(
             ollamaTools,
             DefaultJsonSerializerOptions.JsonSerializeOptionsIndented);
+    }
+
+    public string CreateRequestJson(Model model, Prompt prompt)
+    {
+        var functions = prompt.tools.Select(tool => new
+        {
+            name = tool.Name,
+            description = tool.Desciption,
+            parameters = new
+            {
+                type = "object",
+                properties = tool.Parameters.ToDictionary(p => p.Name, p => new
+                {
+                    type = p.Type,
+                    description = p.Description,
+                    @enum = p.Enum
+                }),
+                required = tool.Parameters.Where(p => !p.Optional).Select(p => p.Name).ToArray()
+            }
+        }).ToArray();
+
+        var payload = new
+        {
+            model = model.Name,
+            messages = prompt.messages.Select(m => new { role = m.role, content = m.content }).ToArray(),
+            functions
+        };
+
+        var payloadJson = JsonSerializer.Serialize(payload, DefaultJsonSerializerOptions.JsonSerializeOptionsIndented);
+        return payloadJson;
     }
 }
 
