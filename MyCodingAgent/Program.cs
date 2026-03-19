@@ -1,10 +1,7 @@
 ﻿using Microsoft.Extensions.Configuration;
-using MyCodingAgent.Agents;
 using MyCodingAgent.Interfaces;
 using MyCodingAgent.Models;
 using MyCodingAgent.OllamaClient;
-using MyCodingAgent.OpenAiClient;
-using MyCodingAgent.Models;
 
 #pragma warning disable CA1859 // Use concrete types when possible for improved performance
 
@@ -86,109 +83,109 @@ internal class Program : IDisposable
             if (NeedsPlanner(workspace))
             {
                 // PLANNING MODE
-                await RunPlanningLoop(workspace, model, team.projectManagerPlannerAgent);
+                await RunPlanningLoop(workspace, model, team);
                 continue;
             }
             if (CoderNeedsProjectManager(workspace))
             {
                 // CODER NEEDS PROJECT MANAGER MODE
-                await RunCoderNeedsProjectManagerLoop(workspace, model, team.projectManagerForCodingAgent);
+                await RunCoderNeedsProjectManagerLoop(workspace, model, team);
                 continue;
             }
             if (DebuggerNeedsProjectManager(workspace))
             {
                 // DEBUGGER NEEDS PROJECT MANAGER MODE
-                await RunDebuggerNeedsProjectManagerLoop(workspace, model, team.projectManagerForDebuggerAgent);
+                await RunDebuggerNeedsProjectManagerLoop(workspace, model, team);
                 continue;
             }
             if (DebuggerNeedsCoder(workspace))
             {
                 // DEBUGGER NEEDS CODER MODE
-                await RunDebuggerNeedsCoderLoop(workspace, model, team.codingForDebugAgent);
+                await RunDebuggerNeedsCoderLoop(workspace, model, team);
                 continue;
             }
             var compileResult = await workspace.Compile();
             if (NeedsDebugging(workspace, compileResult))
             {
                 // DEBUGGER MODE
-                await RunDebuggerLoop(workspace, model, team.debuggerAgent, compileResult);
+                await RunDebuggerLoop(workspace, model, team, compileResult);
                 continue;
             }
             if (NeedsCoder(workspace, compileResult))
             {
                 // CODER MODE
-                await RunCoderLoop(workspace, model, team.codingAgent, compileResult);
+                await RunCoderLoop(workspace, model, team, compileResult);
                 continue;
             }
             if (NeedsCodeReview(workspace))
                 // CODE REVIEW MODE
-                await RunCodeReviewLoop(workspace, model, team.projectManagerCodeReviewerAgent);
+                await RunCodeReviewLoop(workspace, model, team);
         }
 
         await workspace.Save();
     }
 
-    private async Task RunPlanningLoop(Workspace workspace, Model model, ProjectManagerPlanner_Agent planningAgent)
+    private async Task RunPlanningLoop(Workspace workspace, Model model, AgentTeam team)
     {
         while (NeedsPlanner(workspace))
         {
-            await AgentFlow(workspace, model, planningAgent);
+            await AgentFlow(workspace, model, team.projectManagerPlannerAgent);
         }
         await workspace.Save();
         Console.Clear();
     }
-    private async Task RunCoderNeedsProjectManagerLoop(Workspace workspace, Model model, ProjectManagerForCoding_Agent projectManagerAgent)
+    private async Task RunCoderNeedsProjectManagerLoop(Workspace workspace, Model model, AgentTeam team)
     {
         while (CoderNeedsProjectManager(workspace))
         {
-            await AgentFlow(workspace, model, projectManagerAgent);
+            await AgentFlow(workspace, model, team.projectManagerForCodingAgent);
         }
         await workspace.Save();
         Console.Clear();
     }
-    private async Task RunDebuggerNeedsProjectManagerLoop(Workspace workspace, Model model, ProjectManagerForDebugger_Agent projectManagerForCodingAgent)
+    private async Task RunDebuggerNeedsProjectManagerLoop(Workspace workspace, Model model, AgentTeam team)
     {
         while (DebuggerNeedsProjectManager(workspace))
         {
-            await AgentFlow(workspace, model, projectManagerForCodingAgent);
+            await AgentFlow(workspace, model, team.projectManagerForDebuggerAgent);
         }
         await workspace.Save();
         Console.Clear();
     }
-    private async Task RunDebuggerNeedsCoderLoop(Workspace workspace, Model model, CoderForDebugger_Agent codingForDebugAgent)
+    private async Task RunDebuggerNeedsCoderLoop(Workspace workspace, Model model, AgentTeam team)
     {
         while (DebuggerNeedsCoder(workspace))
         {
-            await AgentFlow(workspace, model, codingForDebugAgent);
+            await AgentFlow(workspace, model, team.codingForDebugAgent);
         }
         await workspace.Save();
         Console.Clear();
     }
-    private async Task RunDebuggerLoop(Workspace workspace, Model model, Debugger_Agent debuggingAgent, CompileResult compileResult)
+    private async Task RunDebuggerLoop(Workspace workspace, Model model, AgentTeam team, CompileResult compileResult)
     {
         while (NeedsDebugging(workspace, compileResult))
         {
-            await AgentFlow(workspace, model, debuggingAgent); 
+            await AgentFlow(workspace, model, team.debuggerAgent); 
             compileResult = await workspace.Compile();
         }
         await workspace.Save();
         Console.Clear();
     }
-    private async Task RunCoderLoop(Workspace workspace, Model model, Coder_Agent codingAgent, CompileResult compileResult)
+    private async Task RunCoderLoop(Workspace workspace, Model model, AgentTeam team, CompileResult compileResult)
     {
         while (NeedsCoder(workspace, compileResult))
         {
-            await AgentFlow(workspace, model, codingAgent);
+            await AgentFlow(workspace, model, team.codingAgent);
             compileResult = await workspace.Compile();
         }
         await workspace.Save();
         Console.Clear();
     }
-    private async Task RunCodeReviewLoop(Workspace workspace, Model model, ProjectManagerCodeReviewer_Agent projectManagerCodeReviewerAgent)
+    private async Task RunCodeReviewLoop(Workspace workspace, Model model, AgentTeam team)
     {
         while (NeedsCodeReview(workspace))
         {
-            await AgentFlow(workspace, model, projectManagerCodeReviewerAgent);
+            await AgentFlow(workspace, model, team.projectManagerCodeReviewerAgent);
         }
         await workspace.Save();
         Console.Clear();
@@ -275,11 +272,11 @@ internal class Program : IDisposable
             Console.WriteLine("\x1b[3J");
 
             var prompt = await agent.GeneratePrompt();
-            foreach (var message in prompt.messages)
-                ShowMessage(message);
-            Console.WriteLine();
+            //foreach (var message in prompt.messages)
+            //    ShowMessage(message);
+            //Console.WriteLine();
 
-            string requestJson = Client.CreateRequestJson(model, prompt);
+            string requestJson = Client.CreateMessagesJson(prompt.messages);
             Console.WriteLine(requestJson);
 
             var response = await Client.ChatAsync(model, prompt);

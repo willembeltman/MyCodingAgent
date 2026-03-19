@@ -174,7 +174,7 @@ public abstract class BaseAgent(IClient Client, Workspace Workspace, Model model
         return new Message(
             nameof(AgentRole.Tool).ToLower(),
             toolCall?.tool_call.Id,
-            toolCall == null ? "Error: no tool_calls found" : useShortContent ? toolCall.result.shortContent : toolCall.result.content,
+            toolCall == null ? "Error: no tool_calls found" : false ? toolCall.result.shortContent : toolCall.result.content,
             null,
             null);
     }

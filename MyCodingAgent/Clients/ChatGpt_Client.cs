@@ -150,6 +150,7 @@ public class ChatGpt_Client : IDisposable, IClient
         GC.SuppressFinalize(this);
     }
 
+    // Let op: onderdeel van de interface
     public string CreateMessagesJson(Message[] messages)
     {
         var openAiMessages = messages.Select(m => new
@@ -173,6 +174,7 @@ public class ChatGpt_Client : IDisposable, IClient
             openAiMessages,
             DefaultJsonSerializerOptions.JsonSerializeOptionsIndented);
     }
+    // Let op: onderdeel van de interface
     public string CreateToolsJson(Tool[] tools)
     {
         var openAiTools = tools.Select(tool => new
@@ -194,6 +196,7 @@ public class ChatGpt_Client : IDisposable, IClient
             DefaultJsonSerializerOptions.JsonSerializeOptionsIndented);
     }
 
+    // Let op: onderdeel van de interface
     public string CreateRequestJson(Model model, Prompt prompt)
     {
         var payload = new

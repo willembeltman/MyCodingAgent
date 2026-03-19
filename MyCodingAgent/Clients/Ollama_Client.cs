@@ -38,7 +38,7 @@ public class Ollama_Client(
             models.Add(new Model(
                 model.name!,
                 model.size!,
-                8192,
+                4096, //8192,
                 model.modified_at!));
         }
         return [.. models];
