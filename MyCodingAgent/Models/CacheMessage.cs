@@ -1,12 +1,12 @@
 ﻿namespace MyCodingAgent.Models;
 
 public record CacheMessage(
-    string toolName,
-    string? id,
-    string? action, 
-    string? path, 
-    string? newPath,
-    string? query,
-    string? content,
-    string? replaceText,
-    int? lineNumber);
+    string ToolName,
+    string? Id,
+    string? Action, 
+    string? Path, 
+    string? NewPath,
+    string? Query,
+    string? Content,
+    string? ReplaceText,
+    int? LineNumber);
