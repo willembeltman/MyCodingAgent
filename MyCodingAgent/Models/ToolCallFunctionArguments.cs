@@ -1,4 +1,4 @@
-﻿namespace MyCodingAgent.Shared.Models;
+﻿namespace MyCodingAgent.Models;
 
 public class ToolCallFunctionArguments
 {

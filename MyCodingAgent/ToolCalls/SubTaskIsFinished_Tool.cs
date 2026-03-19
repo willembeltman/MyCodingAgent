@@ -1,6 +1,6 @@
-﻿using MyCodingAgent.Shared.Interfaces;
+﻿using MyCodingAgent.Interfaces;
 using MyCodingAgent.Models;
-using MyCodingAgent.Shared.Models;
+using MyCodingAgent.Models;
 
 namespace MyCodingAgent.ToolCalls;
 

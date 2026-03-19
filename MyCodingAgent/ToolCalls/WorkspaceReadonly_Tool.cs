@@ -1,7 +1,7 @@
-﻿using MyCodingAgent.Shared.Interfaces;
+﻿using MyCodingAgent.Interfaces;
 using MyCodingAgent.Models;
-using MyCodingAgent.Shared.Helpers;
-using MyCodingAgent.Shared.Models;
+using MyCodingAgent.Helpers;
+using MyCodingAgent.Models;
 using System.Text;
 using System.Text.RegularExpressions;
 

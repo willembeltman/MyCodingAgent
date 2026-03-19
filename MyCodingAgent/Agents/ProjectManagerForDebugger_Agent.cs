@@ -1,8 +1,8 @@
-﻿using MyCodingAgent.Shared.Interfaces;
+﻿using MyCodingAgent.Interfaces;
 using MyCodingAgent.Models;
-using MyCodingAgent.Shared.Enums;
-using MyCodingAgent.Shared.Helpers;
-using MyCodingAgent.Shared.Models;
+using MyCodingAgent.Enums;
+using MyCodingAgent.Helpers;
+using MyCodingAgent.Models;
 using MyCodingAgent.ToolCalls;
 using MyCodingAgent.ToolCalls.AgentCommunication;
 using System.Text.Json;
@@ -16,7 +16,7 @@ public class ProjectManagerForDebugger_Agent : BaseAgent, IAgent
         AnswerDebugAgentTool = new DebuggerNeedsProjectManagerAnswer_Tool(workspace);
         SubTasksTool = new SubTasks_Tool(workspace);
         WorkspaceTool = new WorkspaceReadonly_Tool(workspace);
-        AskHumanDeveloperTool = new Ask_HumanDeveloper_Tool(workspace);
+        AskHumanDeveloperTool = new AskHumanDeveloper_Tool(workspace);
 
         Tools =
         [
@@ -30,7 +30,7 @@ public class ProjectManagerForDebugger_Agent : BaseAgent, IAgent
     public DebuggerNeedsProjectManagerAnswer_Tool AnswerDebugAgentTool { get; }
     public SubTasks_Tool SubTasksTool { get; }
     public WorkspaceReadonly_Tool WorkspaceTool { get; }
-    public Ask_HumanDeveloper_Tool AskHumanDeveloperTool { get; }
+    public AskHumanDeveloper_Tool AskHumanDeveloperTool { get; }
 
     protected override List<PromptResponseResults> History => Workspace.PlanningHistory;
     protected override IToolCall[] Tools { get; }

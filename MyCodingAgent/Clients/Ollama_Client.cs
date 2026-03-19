@@ -1,6 +1,6 @@
-﻿using MyCodingAgent.Shared.Helpers;
-using MyCodingAgent.Shared.Interfaces;
-using MyCodingAgent.Shared.Models;
+﻿using MyCodingAgent.Helpers;
+using MyCodingAgent.Interfaces;
+using MyCodingAgent.Models;
 using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json;

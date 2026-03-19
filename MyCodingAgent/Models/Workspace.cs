@@ -1,5 +1,5 @@
 ﻿using MyCodingAgent.Helpers;
-using MyCodingAgent.Shared.Helpers;
+using MyCodingAgent.Helpers;
 using MyCodingAgent.ToolCalls.AgentCommunication.Models;
 using System.Text;
 using System.Text.Json;

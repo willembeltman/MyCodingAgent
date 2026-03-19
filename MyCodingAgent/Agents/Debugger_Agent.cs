@@ -1,8 +1,8 @@
 ﻿using MyCodingAgent.Agents;
-using MyCodingAgent.Shared.Interfaces;
+using MyCodingAgent.Interfaces;
 using MyCodingAgent.Models;
-using MyCodingAgent.Shared.Enums;
-using MyCodingAgent.Shared.Models;
+using MyCodingAgent.Enums;
+using MyCodingAgent.Models;
 using MyCodingAgent.ToolCalls;
 using MyCodingAgent.ToolCalls.AgentCommunication;
 

@@ -1,7 +1,7 @@
-﻿using MyCodingAgent.Shared.Interfaces;
+﻿using MyCodingAgent.Interfaces;
 using MyCodingAgent.Models;
-using MyCodingAgent.Shared.Enums;
-using MyCodingAgent.Shared.Models;
+using MyCodingAgent.Enums;
+using MyCodingAgent.Models;
 using MyCodingAgent.ToolCalls;
 
 namespace MyCodingAgent.Agents;
@@ -13,7 +13,7 @@ public class ProjectManagerCodeReviewer_Agent : BaseAgent, IAgent
     {
         WorkspaceTool = new WorkspaceReadonly_Tool(workspace);
         SubTasksTool = new SubTasks_Tool(workspace);
-        AskHumanDeveloperTool = new Ask_HumanDeveloper_Tool(workspace);
+        AskHumanDeveloperTool = new AskHumanDeveloper_Tool(workspace);
         CodeReviewIsDoneTool = new CodeReviewIsDone_Tool(workspace);
 
         Tools =
@@ -27,7 +27,7 @@ public class ProjectManagerCodeReviewer_Agent : BaseAgent, IAgent
 
     public WorkspaceReadonly_Tool WorkspaceTool { get; }
     public SubTasks_Tool SubTasksTool { get; }
-    public Ask_HumanDeveloper_Tool AskHumanDeveloperTool { get; }
+    public AskHumanDeveloper_Tool AskHumanDeveloperTool { get; }
     public CodeReviewIsDone_Tool CodeReviewIsDoneTool { get; }
 
     protected override List<PromptResponseResults> History => Workspace.PlanningHistory;

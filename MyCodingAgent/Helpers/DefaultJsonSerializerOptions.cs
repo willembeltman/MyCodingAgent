@@ -1,7 +1,7 @@
 ﻿using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace MyCodingAgent.Shared.Helpers;
+namespace MyCodingAgent.Helpers;
 
 public static class DefaultJsonSerializerOptions
 {

@@ -1,10 +1,10 @@
 ﻿using Microsoft.Extensions.Configuration;
 using MyCodingAgent.Agents;
-using MyCodingAgent.Shared.Interfaces;
+using MyCodingAgent.Interfaces;
 using MyCodingAgent.Models;
 using MyCodingAgent.OllamaClient;
 using MyCodingAgent.OpenAiClient;
-using MyCodingAgent.Shared.Models;
+using MyCodingAgent.Models;
 
 #pragma warning disable CA1859 // Use concrete types when possible for improved performance
 
@@ -60,7 +60,7 @@ internal class Program : IDisposable
         await Client.InitializeModelAsync(model);
 
         Console.WriteLine($"Model '{model.Name}' initialized, initialising agents, please wait...");
-        var team = new Team(Client, workspace, model);
+        var team = new AgentTeam(Client, workspace, model);
 
         //Console.WriteLine("Agents initialized, attempting to compile workspace, please wait...");
         //var compileResult = await workspace.Compile();
@@ -77,7 +77,7 @@ internal class Program : IDisposable
     private async Task RunMainLoop(
         Workspace workspace,
         Model model,
-        Team team)
+        AgentTeam team)
     {
         Console.Clear();
 

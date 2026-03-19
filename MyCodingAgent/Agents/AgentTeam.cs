@@ -1,11 +1,11 @@
 ﻿using MyCodingAgent.Agents;
 using MyCodingAgent.Models;
-using MyCodingAgent.Shared.Interfaces;
-using MyCodingAgent.Shared.Models;
+using MyCodingAgent.Interfaces;
+using MyCodingAgent.Models;
 
-public class Team
+public class AgentTeam
 {
-    public Team(IClient client, Workspace workspace, Model model)
+    public AgentTeam(IClient client, Workspace workspace, Model model)
     {
         codingAgent = new Coder_Agent(client, workspace, model);
         codingForDebugAgent = new CoderForDebugger_Agent(client, workspace, model);

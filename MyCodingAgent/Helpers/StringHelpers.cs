@@ -1,6 +1,6 @@
-﻿using MyCodingAgent.Shared.Models;
+﻿using MyCodingAgent.Models;
 
-namespace MyCodingAgent.Shared.Helpers;
+namespace MyCodingAgent.Helpers;
 
 public static class StringHelpers
 {

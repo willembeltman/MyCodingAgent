@@ -21,11 +21,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\MyCodingAgent.OllamaClient\MyCodingAgent.OllamaClient.csproj" />
-    <ProjectReference Include="..\MyCodingAgent.OpenAiClient\MyCodingAgent.OpenAiClient.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
     <None Update="appsettings.Development.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>

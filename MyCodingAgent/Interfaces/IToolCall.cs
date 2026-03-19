@@ -1,7 +1,7 @@
 ﻿using MyCodingAgent.Models;
-using MyCodingAgent.Shared.Models;
+using MyCodingAgent.Models;
 
-namespace MyCodingAgent.Shared.Interfaces;
+namespace MyCodingAgent.Interfaces;
 
 public interface IToolCall
 {

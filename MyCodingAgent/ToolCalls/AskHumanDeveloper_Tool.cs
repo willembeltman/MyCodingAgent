@@ -1,10 +1,10 @@
-﻿using MyCodingAgent.Shared.Interfaces;
+﻿using MyCodingAgent.Interfaces;
 using MyCodingAgent.Models;
-using MyCodingAgent.Shared.Models;
+using MyCodingAgent.Models;
 
 namespace MyCodingAgent.ToolCalls;
 
-public class Ask_HumanDeveloper_Tool(Workspace workspace) : IToolCall
+public class AskHumanDeveloper_Tool(Workspace workspace) : IToolCall
 {
     public string Name
         => "ask_human_developer";
