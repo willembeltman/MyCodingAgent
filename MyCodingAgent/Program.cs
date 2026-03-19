@@ -6,10 +6,12 @@ using MyCodingAgent.OllamaClient;
 using MyCodingAgent.OpenAiClient;
 using MyCodingAgent.Shared.Models;
 
+#pragma warning disable CA1859 // Use concrete types when possible for improved performance
+
 internal class Program : IDisposable
 {
     readonly CancellationTokenSource Cts;
-    readonly IClient LlmService;
+    readonly IClient Client;
 
     private Program()
     {
@@ -38,7 +40,7 @@ internal class Program : IDisposable
         Console.WriteLine("Appsettings loaded, loading workspace, please wait...");
 
         Cts = new CancellationTokenSource();
-        LlmService =
+        Client =
             //new ChatGpt_Client(apiKey);
             new Ollama_Client();
     }
@@ -51,14 +53,14 @@ internal class Program : IDisposable
             workspace = await CreateWorkspace(workspaceDirectory);
 
         Console.WriteLine("Workspace loaded, getting model list, please wait...");
-        var modelList = await LlmService.GetModels();
+        var modelList = await Client.GetModels();
         var model = ChooseModel(modelList);
 
         Console.WriteLine($"Initialising model '{model.Name}', please wait...");
-        await LlmService.InitializeModelAsync(model);
+        await Client.InitializeModelAsync(model);
 
         Console.WriteLine($"Model '{model.Name}' initialized, initialising agents, please wait...");
-        var team = new Team(LlmService, workspace, model);
+        var team = new Team(Client, workspace, model);
 
         //Console.WriteLine("Agents initialized, attempting to compile workspace, please wait...");
         //var compileResult = await workspace.Compile();
@@ -277,10 +279,10 @@ internal class Program : IDisposable
                 ShowMessage(message);
             Console.WriteLine();
 
-            string requestJson = LlmService.CreateRequestJson(model, prompt);
+            string requestJson = Client.CreateRequestJson(model, prompt);
             Console.WriteLine(requestJson);
 
-            var response = await LlmService.ChatAsync(model, prompt);
+            var response = await Client.ChatAsync(model, prompt);
             ShowMessage(response.message);
             Console.WriteLine();
 
@@ -360,54 +362,54 @@ internal class Program : IDisposable
         var previousColor = Console.ForegroundColor;
 
         Console.ForegroundColor = ConsoleColor.Green;
-        Console.WriteLine($"[{message.role.ToUpper()}]");
-        if (message.thinking != null)
+        Console.WriteLine($"[{message.Role.ToUpper()}]");
+        if (message.Thinking != null)
         {
             Console.ForegroundColor = ConsoleColor.Gray;
-            Console.WriteLine(message.thinking);
+            Console.WriteLine(message.Thinking);
         }
-        if (message.tool_call_id != null)
+        if (message.ToolCallId != null)
         {
             Console.ForegroundColor = ConsoleColor.Blue;
-            Console.WriteLine(message.tool_call_id);
-            Console.WriteLine(message.content);
+            Console.WriteLine(message.ToolCallId);
+            Console.WriteLine(message.Content);
         }
         else
         {
             Console.ForegroundColor = ConsoleColor.White;
-            Console.WriteLine(message.content);
+            Console.WriteLine(message.Content);
         }
-        if (message.tool_calls != null)
+        if (message.ToolCalls != null)
         {
-            foreach (var call in message.tool_calls)
+            foreach (var call in message.ToolCalls)
             {
                 Console.ForegroundColor = ConsoleColor.White;
-                Console.WriteLine($"tool: {call.function.name.ToUpper()}");
+                Console.WriteLine($"tool: {call.Function.Name.ToUpper()}");
 
-                if (!string.IsNullOrWhiteSpace( call.function.arguments.action))
-                    Console.WriteLine($"action: {call.function.arguments.action.ToUpper()}");
+                if (!string.IsNullOrWhiteSpace( call.Function.Arguments.Action))
+                    Console.WriteLine($"action: {call.Function.Arguments.Action.ToUpper()}");
 
                 Console.ForegroundColor = ConsoleColor.Red;
-                if (!string.IsNullOrWhiteSpace(call.function.arguments.id))
-                    Console.WriteLine($"id: {call.function.arguments.id}");
+                if (!string.IsNullOrWhiteSpace(call.Function.Arguments.Id))
+                    Console.WriteLine($"id: {call.Function.Arguments.Id}");
 
-                if (!string.IsNullOrWhiteSpace(call.function.arguments.path))
-                    Console.WriteLine($"path: {call.function.arguments.path}");
+                if (!string.IsNullOrWhiteSpace(call.Function.Arguments.Path))
+                    Console.WriteLine($"path: {call.Function.Arguments.Path}");
 
-                if (!string.IsNullOrWhiteSpace(call.function.arguments.query))
-                    Console.WriteLine($"query: {call.function.arguments.query}");
+                if (!string.IsNullOrWhiteSpace(call.Function.Arguments.Query))
+                    Console.WriteLine($"query: {call.Function.Arguments.Query}");
 
-                if (call.function.arguments.lineNumber != null)
-                    Console.WriteLine($"lineNumber: {call.function.arguments.lineNumber}");
+                if (call.Function.Arguments.LineNumber != null)
+                    Console.WriteLine($"lineNumber: {call.Function.Arguments.LineNumber}");
 
-                if (!string.IsNullOrWhiteSpace(call.function.arguments.newPath))
-                    Console.WriteLine($"newPath: {call.function.arguments.newPath}");
+                if (!string.IsNullOrWhiteSpace(call.Function.Arguments.NewPath))
+                    Console.WriteLine($"newPath: {call.Function.Arguments.NewPath}");
 
-                if (!string.IsNullOrWhiteSpace(call.function.arguments.content))
-                    Console.WriteLine($"content: {call.function.arguments.content}");
+                if (!string.IsNullOrWhiteSpace(call.Function.Arguments.Content))
+                    Console.WriteLine($"content: {call.Function.Arguments.Content}");
 
-                if (!string.IsNullOrWhiteSpace(call.function.arguments.replaceText))
-                    Console.WriteLine($"replaceText: {call.function.arguments.replaceText}");
+                if (!string.IsNullOrWhiteSpace(call.Function.Arguments.ReplaceText))
+                    Console.WriteLine($"replaceText: {call.Function.Arguments.ReplaceText}");
             }
         }
         Console.WriteLine();
@@ -419,7 +421,7 @@ internal class Program : IDisposable
     {
         Cts.Cancel();
         Cts.Dispose();
-        LlmService.Dispose();
+        Client.Dispose();
     }
 
     // Main entry point for application

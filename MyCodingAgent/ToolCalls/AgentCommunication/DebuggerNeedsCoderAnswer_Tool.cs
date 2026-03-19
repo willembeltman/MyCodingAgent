@@ -19,8 +19,8 @@ public class DebuggerNeedsCoderAnswer_Tool(Workspace workspace) : IToolCall
 
     public async Task<ToolResult> Invoke(ToolCall toolCall)
     {
-        var toolArguments = toolCall.function.arguments;
-        if (toolArguments.content == null)
+        var toolArguments = toolCall.Function.Arguments;
+        if (toolArguments.Content == null)
             return new ToolResult(
                 "parameter content is not supplied",
                 "parameter content is not supplied",
@@ -31,15 +31,13 @@ public class DebuggerNeedsCoderAnswer_Tool(Workspace workspace) : IToolCall
 
         var debugToolCall = workspace.DebugHistory
             .SelectMany(a => a.ToolCallResults)
-            .FirstOrDefault(a => a.tool_call.id == workspace.DebugAgent_To_CoderAgent_Question.ToolCallId);
-        if (debugToolCall == null)
-            throw new Exception("Oh ooh..");
-
-        debugToolCall.result.content = toolArguments.content;
+            .FirstOrDefault(a => a.tool_call.Id == workspace.DebugAgent_To_CoderAgent_Question.ToolCallId)
+            ?? throw new Exception("Oh ooh..");
+        debugToolCall.result.content = toolArguments.Content;
         workspace.DebugAgent_To_CoderAgent_Question = null;
 
         return new ToolResult(
-            $"Updated subtask '{toolArguments.id}'",
+            $"Updated subtask '{toolArguments.Id}'",
             $"Updated subtask",
             false);
     }

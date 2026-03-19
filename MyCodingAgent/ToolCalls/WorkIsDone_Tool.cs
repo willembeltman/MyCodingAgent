@@ -13,7 +13,6 @@ public class WorkIsDone_Tool(Workspace workspace) : IToolCall
     public ToolParameter[] Parameters { get; } = [];
     public async Task<ToolResult> Invoke(ToolCall toolCall)
     {
-        var toolArguments = toolCall.function.arguments;
         workspace.Flags.IsCodeReviewingFlag = true;
         await workspace.Save();
         return new ToolResult("OK DONE!", "OK DONE!", false);

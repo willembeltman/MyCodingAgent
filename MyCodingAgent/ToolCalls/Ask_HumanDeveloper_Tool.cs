@@ -16,18 +16,18 @@ public class Ask_HumanDeveloper_Tool(Workspace workspace) : IToolCall
     ];
     public async Task<ToolResult> Invoke(ToolCall toolCall)
     {
-        var toolArguments = toolCall.function.arguments;
-        if (toolArguments.content == null)
+        var toolArguments = toolCall.Function.Arguments;
+        if (toolArguments.Content == null)
             return new ToolResult(
                 "parameter content is not supplied",
                 "parameter content is not supplied",
                 true);
 
-        if (toolCall.id == null)
+        if (toolCall.Id == null)
             throw new Exception("eeeuhm..");
 
         workspace.CodingAgent_To_ProjectManagerAgent_Question =
-            new(toolCall.id, toolArguments.content);
+            new(toolCall.Id, toolArguments.Content);
 
         var answer = "Waiting for answer..";
         return new ToolResult(

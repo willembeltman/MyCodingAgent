@@ -2,12 +2,12 @@
 
 public class ToolCallFunctionArguments
 {
-    public string? id { get; set; }
-    public string? action { get; set; }
-    public string? path { get; set; }
-    public string? newPath { get; set; }
-    public string? query { get; set; }
-    public string? content { get; set; }
-    public string? replaceText { get; set; }
-    public int? lineNumber { get; set; }
+    public string? Id { get; set; }
+    public string? Action { get; set; }
+    public string? Path { get; set; }
+    public string? NewPath { get; set; }
+    public string? Query { get; set; }
+    public string? Content { get; set; }
+    public string? ReplaceText { get; set; }
+    public int? LineNumber { get; set; }
 }

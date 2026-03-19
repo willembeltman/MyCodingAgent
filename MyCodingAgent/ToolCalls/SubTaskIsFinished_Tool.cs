@@ -16,7 +16,7 @@ public class SubTaskIsFinished_Tool(Workspace workspace) : IToolCall
 
     public async Task<ToolResult> Invoke(ToolCall toolCall)
     {
-        var toolArguments = toolCall.function.arguments;
+        var toolArguments = toolCall.Function.Arguments;
 
         var subtask = workspace.GetCurrentSubTask()
             ?? throw new Exception("wtf?");
@@ -26,7 +26,7 @@ public class SubTaskIsFinished_Tool(Workspace workspace) : IToolCall
             if (subtask.Finished)
             {
                 return new ToolResult(
-                    $"Error subtask '{toolArguments.id}' already finished",
+                    $"Error subtask '{toolArguments.Id}' already finished",
                     $"Error subtask already finished",
                     true);
             }

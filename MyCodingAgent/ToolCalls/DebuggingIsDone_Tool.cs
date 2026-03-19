@@ -16,23 +16,20 @@ public class DebuggingIsDone_Tool(Workspace workspace) : IToolCall
     ];
     public async Task<ToolResult> Invoke(ToolCall toolCall)
     {
-        var toolArguments = toolCall.function.arguments;
-        if (toolArguments.content == null)
+        var toolArguments = toolCall.Function.Arguments;
+        if (toolArguments.Content == null)
             return new ToolResult(
                 "Error parameter content is not supplied",
                 "Error parameter content is not supplied",
                 true);
 
         var history = workspace.CodingHistory.LastOrDefault();
-        if (history != null)
-        {
-            history.ToolCallResults.Add(
+        history?.ToolCallResults.Add(
                 new ToolCallResult(toolCall,
                     new ToolResult(
-                        $"Your changes resulted in a error, so the debug agent has fixed them.\r\nThis is his rapport about the fix:\r\n{toolArguments.content}",
+                        $"Your changes resulted in a error, so the debug agent has fixed them.\r\nThis is his rapport about the fix:\r\n{toolArguments.Content}",
                         $"Your changes resulted in a error, so the debug agent has fixed them",
                         false)));
-        }
         workspace.Flags.IsDebuggingFlag = false;
         workspace.Flags.NeedClearDebugHistoryFlag = true;
         await workspace.Save();

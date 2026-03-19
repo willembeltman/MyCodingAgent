@@ -20,8 +20,8 @@ public abstract class BaseAgent(IClient Client, Workspace Workspace, Model model
     {
         var notNullHistory = history
             .Where(a =>
-                string.IsNullOrWhiteSpace(a.Response.message.content) == false ||
-                (a.Response.message.tool_calls != null && a.Response.message.tool_calls.Length > 0))
+                string.IsNullOrWhiteSpace(a.Response.message.Content) == false ||
+                (a.Response.message.ToolCalls != null && a.Response.message.ToolCalls.Length > 0))
             .ToList();
 
         var messagesJson = JsonSerializer.Serialize(messageList, DefaultJsonSerializerOptions.JsonSerializeOptionsIndented);
@@ -49,15 +49,15 @@ public abstract class BaseAgent(IClient Client, Workspace Workspace, Model model
                 foreach (var toolCall in responseResult.ToolCallResults)
                 {
                     var cacheMessage = new CacheMessage(
-                        toolCall.tool_call.function.name,
-                        toolCall.tool_call.function.arguments.id,
-                        toolCall.tool_call.function.arguments.action,
-                        toolCall.tool_call.function.arguments.path,
-                        toolCall.tool_call.function.arguments.newPath,
-                        toolCall.tool_call.function.arguments.query,
+                        toolCall.tool_call.Function.Name,
+                        toolCall.tool_call.Function.Arguments.Id,
+                        toolCall.tool_call.Function.Arguments.Action,
+                        toolCall.tool_call.Function.Arguments.Path,
+                        toolCall.tool_call.Function.Arguments.NewPath,
+                        toolCall.tool_call.Function.Arguments.Query,
                         "", //toolCall.tool_call.function.arguments.content,
                         "", //toolCall.tool_call.function.arguments.replaceText,
-                        toolCall.tool_call.function.arguments.lineNumber);
+                        toolCall.tool_call.Function.Arguments.LineNumber);
                     if (!shownMessages.Add(cacheMessage)) // Todo, als het model ooit meerdere actions gaat uitvoeren
                     {
                         notNullHistory.Remove(responseResult);
@@ -128,32 +128,32 @@ public abstract class BaseAgent(IClient Client, Workspace Workspace, Model model
     private static Message CleanMessage(Message message)
     {
         var content = "Use tool_calls";
-        if (message.tool_calls?.Length > 0 == true)
+        if (message.ToolCalls?.Length > 0 == true)
         {
-            content = string.Join(", ", message.tool_calls.Select(a => a.id));
+            content = string.Join(", ", message.ToolCalls.Select(a => a.Id));
         }
-        if (!string.IsNullOrWhiteSpace(message.content))
+        if (!string.IsNullOrWhiteSpace(message.Content))
         {
-            content = message.content;
+            content = message.Content;
         }
         var toolCalls = (ToolCall[]?)null;
-        if (message.tool_calls != null)
+        if (message.ToolCalls != null)
         {
             toolCalls =
             [
-                .. message.tool_calls.Select(a =>
+                .. message.ToolCalls.Select(a =>
                     new ToolCall(
-                        a.id,
+                        a.Id,
                         new ToolCallFunction(
-                            a.function.name,
+                            a.Function.Name,
                             new ToolCallFunctionArguments()
                             {
-                                action = a.function.arguments.action,
-                                id = a.function.arguments.id,
-                                lineNumber = a.function.arguments.lineNumber,
-                                newPath = a.function.arguments.newPath,
-                                path = a.function.arguments.path,
-                                query = a.function.arguments.query,
+                                Action = a.Function.Arguments.Action,
+                                Id = a.Function.Arguments.Id,
+                                LineNumber = a.Function.Arguments.LineNumber,
+                                NewPath = a.Function.Arguments.NewPath,
+                                Path = a.Function.Arguments.Path,
+                                Query = a.Function.Arguments.Query,
                                 //replaceText = a.function.arguments.replaceText,
                                 //content = a.function.arguments.content
                             })))
@@ -162,7 +162,7 @@ public abstract class BaseAgent(IClient Client, Workspace Workspace, Model model
 
 
         return new Message(
-            message.role,
+            message.Role,
             null,
             content,
             null,
@@ -173,7 +173,7 @@ public abstract class BaseAgent(IClient Client, Workspace Workspace, Model model
     {
         return new Message(
             nameof(AgentRole.Tool).ToLower(),
-            toolCall?.tool_call.id,
+            toolCall?.tool_call.Id,
             toolCall == null ? "Error: no tool_calls found" : useShortContent ? toolCall.result.shortContent : toolCall.result.content,
             null,
             null);
@@ -182,12 +182,12 @@ public abstract class BaseAgent(IClient Client, Workspace Workspace, Model model
     protected static async Task<PromptResponseResults> GetAgentResponseResult(Prompt prompt, Response response, IToolCall[] tools)
     {
         var list = new List<ToolCallResult>();
-        if (response.message.tool_calls != null)
+        if (response.message.ToolCalls != null)
         {
-            foreach (var tool_call in response.message.tool_calls)
+            foreach (var tool_call in response.message.ToolCalls)
             {
-                var toolName = tool_call.function.name;
-                var toolArguments = tool_call.function.arguments;
+                var toolName = tool_call.Function.Name;
+                var toolArguments = tool_call.Function.Arguments;
 
                 var tool = tools.FirstOrDefault(a => a.Name == toolName);
                 if (tool == null)

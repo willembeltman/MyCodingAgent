@@ -6,6 +6,8 @@ using MyCodingAgent.Shared.Models;
 using MyCodingAgent.ToolCalls;
 using MyCodingAgent.ToolCalls.AgentCommunication;
 
+namespace MyCodingAgent.Agents;
+
 public class Debugger_Agent : BaseAgent, IAgent
 {
     public Debugger_Agent(IClient client, Workspace workspace, Model model) : base(client, workspace, model)

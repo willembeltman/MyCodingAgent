@@ -128,14 +128,14 @@ public class Ollama_Client(
                     ..response.message.tool_calls.Select(a =>
                         new ToolCall(a.id, new ToolCallFunction(a.function.name, new ToolCallFunctionArguments()
                         {
-                            action = a.function.arguments.action,
-                            content = a.function.arguments.content,
-                            id = a.function.arguments.id,
-                            lineNumber = a.function.arguments.lineNumber,
-                            newPath = a.function.arguments.newPath,
-                            path = a.function.arguments.path,
-                            query = a.function.arguments.query,
-                            replaceText = a.function.arguments.replaceText,
+                            Action = a.function.arguments.action,
+                            Content = a.function.arguments.content,
+                            Id = a.function.arguments.id,
+                            LineNumber = a.function.arguments.lineNumber,
+                            NewPath = a.function.arguments.newPath,
+                            Path = a.function.arguments.path,
+                            Query = a.function.arguments.query,
+                            ReplaceText = a.function.arguments.replaceText,
                         })))
                 ]));
     }
@@ -163,30 +163,29 @@ public class Ollama_Client(
         var ollamaMessages = messages.Select(a =>
             new
             {
-                role = a.role,
-                tool_call_id = a.tool_call_id,
-                content = a.content,
-                tool_calls = a.tool_calls == null ? null :
-                    a.tool_calls.Select(b =>
-                        new
+                role = a.Role,
+                tool_call_id = a.ToolCallId,
+                content = a.Content,
+                tool_calls = a.ToolCalls?.Select(b =>
+                    new
+                    {
+                        id = b.Id,
+                        function = new
                         {
-                            id = b.id,
-                            function = new
+                            name = b.Function.Name,
+                            arguments = new
                             {
-                                name = b.function.name,
-                                arguments = new
-                                {
-                                    id = b.function.arguments.id,
-                                    action = b.function.arguments.action,
-                                    path = b.function.arguments.path,
-                                    newPath = b.function.arguments.newPath,
-                                    query = b.function.arguments.query,
-                                    content = b.function.arguments.content,
-                                    replaceText = b.function.arguments.replaceText,
-                                    lineNumber = b.function.arguments.lineNumber
-                                }
+                                id = b.Function.Arguments.Id,
+                                action = b.Function.Arguments.Action,
+                                path = b.Function.Arguments.Path,
+                                newPath = b.Function.Arguments.NewPath,
+                                query = b.Function.Arguments.Query,
+                                content = b.Function.Arguments.Content,
+                                replaceText = b.Function.Arguments.ReplaceText,
+                                lineNumber = b.Function.Arguments.LineNumber
                             }
-                        })
+                        }
+                    })
             });
         var messagesJson = JsonSerializer.Serialize(ollamaMessages, DefaultJsonSerializerOptions.JsonSerializeOptionsIndented);
         return messagesJson;

@@ -11,7 +11,7 @@ public class ChatGpt_Client : IDisposable, IClient
 {
     private readonly HttpClient HttpClient;
     private readonly string OpenAiApiKey;
-    private readonly Dictionary<Language, Dictionary<string, string>> Dictionaries = new();
+    private readonly Dictionary<Language, Dictionary<string, string>> Dictionaries = [];
 
     public ChatGpt_Client(string apiKey, HttpClient? httpClient = null)
     {
@@ -52,7 +52,7 @@ public class ChatGpt_Client : IDisposable, IClient
     {
         if (!Dictionaries.TryGetValue(toLanguage, out var dictionary))
         {
-            dictionary = new();
+            dictionary = [];
             Dictionaries[toLanguage] = dictionary;
         }
 
@@ -79,9 +79,8 @@ public class ChatGpt_Client : IDisposable, IClient
             .GetProperty("choices")[0]
             .GetProperty("message")
             .GetProperty("content")
-            .GetString();
-
-        if (translated == null) throw new Exception("No content returned from OpenAI");
+            .GetString()
+            ?? throw new Exception("No content returned from OpenAI");
 
         dictionary[content] = translated;
         return translated;
@@ -102,8 +101,8 @@ public class ChatGpt_Client : IDisposable, IClient
 
         if (msg.TryGetProperty("function_call", out var fc))
         {
-            toolCalls = new[]
-            {
+            toolCalls =
+            [
                 new ToolCall(
                     Guid.NewGuid().ToString(), // unique id
                     new ToolCallFunction(
@@ -113,7 +112,7 @@ public class ChatGpt_Client : IDisposable, IClient
                         )!
                     )
                 )
-            };
+            ];
         }
 
         return new Response(
@@ -121,7 +120,7 @@ public class ChatGpt_Client : IDisposable, IClient
             DateTime.UtcNow,
             new Message(
                 "assistant",
-                toolCalls?.FirstOrDefault()?.id,
+                toolCalls?.FirstOrDefault()?.Id,
                 content,
                 null,
                 toolCalls
@@ -156,17 +155,17 @@ public class ChatGpt_Client : IDisposable, IClient
     {
         var openAiMessages = messages.Select(m => new
         {
-            role = m.role,
-            tool_call_id = m.tool_call_id,
-            content = m.content,
-            thinking = m.thinking,
-            tool_calls = m.tool_calls?.Select(tc => new
+            role = m.Role,
+            tool_call_id = m.ToolCallId,
+            content = m.Content,
+            thinking = m.Thinking,
+            tool_calls = m.ToolCalls?.Select(tc => new
             {
-                id = tc.id,
+                id = tc.Id,
                 function = new
                 {
-                    name = tc.function.name,
-                    arguments = tc.function.arguments
+                    name = tc.Function.Name,
+                    arguments = tc.Function.Arguments
                 }
             }).ToArray()
         }).ToArray();
@@ -179,15 +178,15 @@ public class ChatGpt_Client : IDisposable, IClient
     {
         var openAiTools = tools.Select(tool => new
         {
-            Name = tool.Name,
+            name = tool.Name,
             Description = tool.Desciption,
             Parameters = tool.Parameters.Select(p => new
             {
-                Name = p.Name,
-                Type = p.Type,
-                Description = p.Description,
-                Enum = p.Enum,
-                Optional = p.Optional
+                name = p.Name,
+                type = p.Type,
+                description = p.Description,
+                @enum = p.Enum,
+                optional = p.Optional
             }).ToArray()
         }).ToArray();
 
@@ -198,28 +197,26 @@ public class ChatGpt_Client : IDisposable, IClient
 
     public string CreateRequestJson(Model model, Prompt prompt)
     {
-        var functions = prompt.tools.Select(tool => new
-        {
-            name = tool.Name,
-            description = tool.Desciption,
-            parameters = new
-            {
-                type = "object",
-                properties = tool.Parameters.ToDictionary(p => p.Name, p => new
-                {
-                    type = p.Type,
-                    description = p.Description,
-                    @enum = p.Enum
-                }),
-                required = tool.Parameters.Where(p => !p.Optional).Select(p => p.Name).ToArray()
-            }
-        }).ToArray();
-
         var payload = new
         {
             model = model.Name,
-            messages = prompt.messages.Select(m => new { role = m.role, content = m.content }).ToArray(),
-            functions = functions
+            messages = prompt.messages.Select(m => new { role = m.Role, content = m.Content }).ToArray(),
+            functions = prompt.tools.Select(tool => new
+            {
+                name = tool.Name,
+                description = tool.Desciption,
+                parameters = new
+                {
+                    type = "object",
+                    properties = tool.Parameters.ToDictionary(p => p.Name, p => new
+                    {
+                        type = p.Type,
+                        description = p.Description,
+                        @enum = p.Enum
+                    }),
+                    required = tool.Parameters.Where(p => !p.Optional).Select(p => p.Name).ToArray()
+                }
+            })
         };
 
         var payloadJson = JsonSerializer.Serialize(payload, DefaultJsonSerializerOptions.JsonSerializeOptionsIndented);

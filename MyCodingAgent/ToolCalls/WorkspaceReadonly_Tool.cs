@@ -30,14 +30,14 @@ public class WorkspaceReadonly_Tool(Workspace Workspace) : IToolCall
 
     public virtual async Task<ToolResult> Invoke(ToolCall toolCall)
     {
-        var toolArguments = toolCall.function.arguments;
-        if (toolArguments.action == null)
+        var toolArguments = toolCall.Function.Arguments;
+        if (toolArguments.Action == null)
             return new ToolResult(
                 "Error parameter action is not supplied",
                 "Error parameter action is not supplied",
                 true);
 
-        return toolArguments.action.ToLower() switch
+        return toolArguments.Action.ToLower() switch
         {
             "dir" => await FilesList(toolCall),
             "ls" => await FilesList(toolCall),
@@ -55,46 +55,46 @@ public class WorkspaceReadonly_Tool(Workspace Workspace) : IToolCall
             "diff" => await Diff(toolCall),
             "diff_with_original" => await Diff(toolCall),
             _ => new ToolResult(
-                $"Error could not find action '{toolArguments.action}'",
-                $"Error could not find action '{toolArguments.action}'",
+                $"Error could not find action '{toolArguments.Action}'",
+                $"Error could not find action '{toolArguments.Action}'",
                 true)
         };
     }
 
     protected async Task<ToolResult> FilesList(ToolCall toolCall)
     {
-        var toolArguments = toolCall.function.arguments;
-        var listAllFilesText = await Workspace.GetListAllFilesText(toolArguments.query);
+        var toolArguments = toolCall.Function.Arguments;
+        var listAllFilesText = await Workspace.GetListAllFilesText(toolArguments.Query);
         return new ToolResult(listAllFilesText, "Shown all files", false);
     }
     protected async Task<ToolResult> Read(ToolCall toolCall)
     {
-        var toolArguments = toolCall.function.arguments;
-        if (toolArguments.path == null)
+        var toolArguments = toolCall.Function.Arguments;
+        if (toolArguments.Path == null)
             return new ToolResult(
                 "Error parameter path is not supplied",
                 "Error parameter path is not supplied",
                 true);
 
-        var file = Workspace.GetFile(toolArguments.path);
+        var file = Workspace.GetFile(toolArguments.Path);
         if (file == null)
         {
             return new ToolResult(
-                $"Error reading file '{toolArguments.path}': file not found",
-                $"Error reading file '{toolArguments.path}': file not found",
+                $"Error reading file '{toolArguments.Path}': file not found",
+                $"Error reading file '{toolArguments.Path}': file not found",
                 true);
         }
 
         var fileContent = await file.GetFileContent();
         return new ToolResult(
             fileContent,
-            $"Showed file '{toolArguments.path}'",
+            $"Showed file '{toolArguments.Path}'",
             false);
     }
     protected async Task<ToolResult> Compile(ToolCall toolCall)
     {
-        var toolArguments = toolCall.function.arguments;
-        var compileResult = await Workspace.Compile(toolArguments.path);
+        var toolArguments = toolCall.Function.Arguments;
+        var compileResult = await Workspace.Compile(toolArguments.Path);
 
         return new ToolResult(
             compileResult.Content,
@@ -103,16 +103,16 @@ public class WorkspaceReadonly_Tool(Workspace Workspace) : IToolCall
     }
     protected async Task<ToolResult> TextSearch(ToolCall toolCall)
     {
-        var toolArguments = toolCall.function.arguments;
-        if (toolArguments.query == null)
+        var toolArguments = toolCall.Function.Arguments;
+        if (toolArguments.Query == null)
             return new ToolResult(
                 "Error parameter query is not supplied",
                 "Error parameter query is not supplied",
                 true);
         var files = Workspace.Files;
-        if (string.IsNullOrEmpty(toolArguments.path) == false)
+        if (string.IsNullOrEmpty(toolArguments.Path) == false)
         {
-            var file = Workspace.GetFile(toolArguments.path);
+            var file = Workspace.GetFile(toolArguments.Path);
             if (file != null)
             {
                 files = [file];
@@ -120,21 +120,21 @@ public class WorkspaceReadonly_Tool(Workspace Workspace) : IToolCall
             else
             {
                 return new ToolResult(
-                    $"Error could not find file '{toolArguments.path}'",
+                    $"Error could not find file '{toolArguments.Path}'",
                     $"Error could not find file",
                     true);
             }
         }
 
-        StringBuilder sb = new StringBuilder();
+        var sb = new StringBuilder();
         var found = 0;
-        sb.AppendLine($"query: '{toolArguments.query}'");
+        sb.AppendLine($"query: '{toolArguments.Query}'");
         foreach (var file in files)
         {
             var fileContent = await file.GetFileContent();
             foreach (var line in fileContent.GetLines())
             {
-                var index = line.content.ToLower().IndexOf(toolArguments.query.ToLower());
+                var index = line.content.IndexOf(toolArguments.Query, StringComparison.CurrentCultureIgnoreCase);
                 if (index < 0)
                     continue;
 
@@ -151,26 +151,26 @@ public class WorkspaceReadonly_Tool(Workspace Workspace) : IToolCall
     }
     protected async Task<ToolResult> Diff(ToolCall toolCall)
     {
-        var toolArguments = toolCall.function.arguments;
+        var toolArguments = toolCall.Function.Arguments;
 
-        if (string.IsNullOrEmpty(toolArguments.path))
+        if (string.IsNullOrEmpty(toolArguments.Path))
             return new ToolResult(
                 "Error: parameter 'path' is not supplied",
                 "Error: parameter 'path' is missing",
                 true);
 
-        var file = Workspace.GetFile(toolArguments.path);
-        var originalFile = Workspace.GetOriginalFile(toolArguments.path);
+        var file = Workspace.GetFile(toolArguments.Path);
+        var originalFile = Workspace.GetOriginalFile(toolArguments.Path);
 
         if (file == null)
             return new ToolResult(
-                $"Error: file '{toolArguments.path}' not found",
+                $"Error: file '{toolArguments.Path}' not found",
                 "Error: file not found",
                 true);
 
         if (originalFile == null)
             return new ToolResult(
-                $"Error: original file '{toolArguments.path}' not found. This file may have been added",
+                $"Error: original file '{toolArguments.Path}' not found. This file may have been added",
                 "Error: original file not found",
                 true);
 
@@ -180,7 +180,7 @@ public class WorkspaceReadonly_Tool(Workspace Workspace) : IToolCall
 
         return new ToolResult(
             sb.ToString(),
-            $"Diff generated for {toolArguments.path}",
+            $"Diff generated for {toolArguments.Path}",
             false);
     }
 
@@ -190,7 +190,7 @@ public class WorkspaceReadonly_Tool(Workspace Workspace) : IToolCall
         var model = diffBuilder.BuildDiffModel(oldContent, newContent);
 
         var sb = new StringBuilder();
-        sb.AppendLine($"Diff for file: {toolArguments.path}");
+        sb.AppendLine($"Diff for file: {toolArguments.Path}");
         sb.AppendLine("--- Old");
         sb.AppendLine("+++ New");
 
