@@ -1,19 +1,19 @@
 ﻿using MyCodingAgent.Agents;
-using MyCodingAgent.Helpers;
 using MyCodingAgent.Models;
-using MyCodingAgent.OllamaClient;
+using MyCodingAgent.Shared.Interfaces;
+using MyCodingAgent.Shared.Models;
 
 public class Team
 {
-    public Team(Workspace workspace, Client llmService)
+    public Team(ILlmClient client, Workspace workspace, Model model)
     {
-        codingAgent = new Coder_Agent(workspace, llmService);
-        codingForDebugAgent = new CoderForDebugger_Agent(workspace, llmService);
-        debuggerAgent = new Debugger_Agent(workspace, llmService);
-        projectManagerPlannerAgent = new ProjectManagerPlanner_Agent(workspace, llmService);
-        projectManagerForCodingAgent = new ProjectManagerForCoding_Agent(workspace, llmService);
-        projectManagerForDebuggerAgent = new ProjectManagerForDebugger_Agent(workspace, llmService);
-        projectManagerCodeReviewerAgent = new ProjectManagerCodeReviewer_Agent(workspace, llmService);
+        codingAgent = new Coder_Agent(client, workspace, model);
+        codingForDebugAgent = new CoderForDebugger_Agent(client, workspace, model);
+        debuggerAgent = new Debugger_Agent(client, workspace, model);
+        projectManagerPlannerAgent = new ProjectManagerPlanner_Agent(client, workspace, model);
+        projectManagerForCodingAgent = new ProjectManagerForCoding_Agent(client, workspace, model);
+        projectManagerForDebuggerAgent = new ProjectManagerForDebugger_Agent(client, workspace, model);
+        projectManagerCodeReviewerAgent = new ProjectManagerCodeReviewer_Agent(client, workspace, model);
     }
 
     public ProjectManagerPlanner_Agent projectManagerPlannerAgent { get; }

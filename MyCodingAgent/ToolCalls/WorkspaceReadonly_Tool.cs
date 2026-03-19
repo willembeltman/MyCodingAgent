@@ -1,6 +1,6 @@
-﻿using MyCodingAgent.Helpers;
-using MyCodingAgent.Interfaces;
+﻿using MyCodingAgent.Interfaces;
 using MyCodingAgent.Models;
+using MyCodingAgent.Shared.Helpers;
 using MyCodingAgent.Shared.Models;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -24,8 +24,8 @@ public class WorkspaceReadonly_Tool(Workspace Workspace) : IToolCall
             "compile", 
             "diff_with_original"
         ]),
-        new ("path", "string", "The relative path from the workspace root, for all actions except files_list", null, true),
-        new ("query", "string", "Exact text to find, for text_search action", null, true),
+        new ("path", "string", "The relative path from the workspace root, for all actions except 'list'", null, true),
+        new ("query", "string", "Exact text to find, for 'search' and 'text_search' action", null, true),
     ];
 
     public virtual async Task<ToolResult> Invoke(ToolCall toolCall)
@@ -42,6 +42,7 @@ public class WorkspaceReadonly_Tool(Workspace Workspace) : IToolCall
             "dir" => await FilesList(toolCall),
             "ls" => await FilesList(toolCall),
             "list" => await FilesList(toolCall),
+            "list_files" => await FilesList(toolCall),
             "file_list" => await FilesList(toolCall),
             "files_list" => await FilesList(toolCall),
             "search" => await FilesList(toolCall),

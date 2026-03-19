@@ -28,7 +28,7 @@ public class Workspace_Tool(Workspace Workspace) : WorkspaceReadonly_Tool(Worksp
             "diff_with_original"
         ]),
         new ("path", "string", "File path, not used for 'list' action", null, true),
-        new ("query", "string", "Exact text to find, for 'text_search' and 'text_search_and_replace' action", null, true),
+        new ("query", "string", "Exact text to find, for 'search', 'text_search' and 'text_search_and_replace' action", null, true),
         new ("content", "string", "Content for 'write', 'append' and 'text_search_and_replace' action", null, true),
         new ("newPath", "string", "Destination path for 'move' action", null, true),
         new ("lineNumber", "number", "Line number for 'append' action (optional)", null, true)
@@ -48,6 +48,7 @@ public class Workspace_Tool(Workspace Workspace) : WorkspaceReadonly_Tool(Worksp
             "dir" => await FilesList(toolCall),
             "ls" => await FilesList(toolCall),
             "list" => await FilesList(toolCall),
+            "list_files" => await FilesList(toolCall),
             "file_list" => await FilesList(toolCall),
             "files_list" => await FilesList(toolCall),
             "search" => await FilesList(toolCall),

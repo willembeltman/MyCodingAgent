@@ -1,4 +1,4 @@
-﻿namespace MyCodingAgent.Models;
+﻿namespace MyCodingAgent.Shared.Models;
 
 public record Line(
     int lineNumber,

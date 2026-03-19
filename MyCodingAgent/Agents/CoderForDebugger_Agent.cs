@@ -1,9 +1,8 @@
-﻿using MyCodingAgent.Helpers;
-using MyCodingAgent.Interfaces;
+﻿using MyCodingAgent.Interfaces;
 using MyCodingAgent.Models;
-using MyCodingAgent.OllamaClient;
-using MyCodingAgent.Shared;
 using MyCodingAgent.Shared.Enums;
+using MyCodingAgent.Shared.Helpers;
+using MyCodingAgent.Shared.Interfaces;
 using MyCodingAgent.Shared.Models;
 using MyCodingAgent.ToolCalls;
 using MyCodingAgent.ToolCalls.AgentCommunication;
@@ -13,7 +12,7 @@ namespace MyCodingAgent.Agents;
 
 public class CoderForDebugger_Agent : BaseAgent, IAgent
 {
-    public CoderForDebugger_Agent(Workspace workspace, Client client) : base(workspace, client)
+    public CoderForDebugger_Agent(ILlmClient client, Workspace workspace, Model model) : base(client, workspace, model)
     {
         WorkspaceTool = new WorkspaceReadonly_Tool(workspace);
         AnswerDebugAgentTool = new DebuggerNeedsCoderAnswer_Tool(workspace);
@@ -92,7 +91,6 @@ Please analyze the request above against the subtask definition and provide the 
             messageList,
             History,
             [.. Tools.Select(a => a.ToDto())],
-            maxTokens: 4096,
             additionalSizeInBytes: questionJson.Length);
 
         // Voeg de actuele vraag als laatste toe zodat deze de meeste prioriteit heeft

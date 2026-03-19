@@ -1,16 +1,15 @@
 ﻿using MyCodingAgent.Agents;
-using MyCodingAgent.Helpers;
 using MyCodingAgent.Interfaces;
 using MyCodingAgent.Models;
-using MyCodingAgent.OllamaClient;
 using MyCodingAgent.Shared.Enums;
+using MyCodingAgent.Shared.Interfaces;
 using MyCodingAgent.Shared.Models;
 using MyCodingAgent.ToolCalls;
 using MyCodingAgent.ToolCalls.AgentCommunication;
 
 public class Debugger_Agent : BaseAgent, IAgent
 {
-    public Debugger_Agent(Workspace workspace, Client client) : base(workspace, client)
+    public Debugger_Agent(ILlmClient client, Workspace workspace, Model model) : base(client, workspace, model)
     {
         WorkspaceTool = new Workspace_Tool(workspace);
         DebugAgentIsDoneTool = new DebuggingIsDone_Tool(workspace);
@@ -87,7 +86,6 @@ If there are 0 errors in the compilation result, immediately call '{DebugAgentIs
             messageList,
             History,
             [.. Tools.Select(a => a.ToDto())],
-            maxTokens: 4096,
             additionalSizeInBytes: 0);
 
         return new Prompt(

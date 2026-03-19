@@ -1,8 +1,7 @@
-﻿using MyCodingAgent.Helpers;
-using MyCodingAgent.Interfaces;
+﻿using MyCodingAgent.Interfaces;
 using MyCodingAgent.Models;
-using MyCodingAgent.OllamaClient;
 using MyCodingAgent.Shared.Enums;
+using MyCodingAgent.Shared.Interfaces;
 using MyCodingAgent.Shared.Models;
 using MyCodingAgent.ToolCalls;
 
@@ -10,7 +9,7 @@ namespace MyCodingAgent.Agents;
 
 public class ProjectManagerPlanner_Agent : BaseAgent, IAgent
 {
-    public ProjectManagerPlanner_Agent(Workspace workspace, Client client) : base(workspace, client)
+    public ProjectManagerPlanner_Agent(ILlmClient client, Workspace workspace, Model model) : base(client, workspace, model)
     {
         WorkspaceTool = new WorkspaceReadonly_Tool(workspace);
         SubTasksTool = new SubTasks_Tool(workspace);
@@ -93,7 +92,6 @@ If the requested functionality already exists in the codebase you may call {Work
             messageList, 
             History, 
             [ ..Tools.Select(a => a.ToDto())],
-            maxTokens: 4096,
             additionalSizeInBytes: 0);
 
         return new Prompt(

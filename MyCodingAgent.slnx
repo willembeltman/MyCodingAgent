@@ -2,4 +2,5 @@
   <Project Path="MyCodingAgent.OllamaClient/MyCodingAgent.OllamaClient.csproj" Id="f195622d-b271-4602-9b2a-2748f9ff7ce9" />
   <Project Path="MyCodingAgent.Shared/MyCodingAgent.Shared.csproj" Id="8f7febfa-018e-47a0-9020-1106b2df2a65" />
   <Project Path="MyCodingAgent/MyCodingAgent.csproj" />
+  <Project Path="MyCodingAgent.OpenAiClient/MyCodingAgent.OpenAiClient.csproj" Id="06f69d27-e111-4770-928c-c0b247325ad6" />
 </Solution>

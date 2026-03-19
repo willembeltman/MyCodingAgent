@@ -1,18 +1,16 @@
-﻿using MyCodingAgent.Helpers;
-using MyCodingAgent.Interfaces;
+﻿using MyCodingAgent.Interfaces;
 using MyCodingAgent.Models;
-using MyCodingAgent.OllamaClient;
 using MyCodingAgent.Shared.Enums;
+using MyCodingAgent.Shared.Interfaces;
 using MyCodingAgent.Shared.Models;
 using MyCodingAgent.ToolCalls;
 using MyCodingAgent.ToolCalls.AgentCommunication;
-using System.Text.Json;
 
 namespace MyCodingAgent.Agents;
 
 public class Coder_Agent : BaseAgent, IAgent
 {
-    public Coder_Agent(Workspace workspace, Client client) : base(workspace, client)
+    public Coder_Agent(ILlmClient client, Workspace workspace, Model model) : base(client, workspace, model)
     {
         WorkspaceTool = new Workspace_Tool(workspace);
         AskProjectManagerTool = new CoderNeedsProjectManager_Tool(workspace);
@@ -85,7 +83,6 @@ RULES
             messageList,
             History,
             [.. Tools.Select(a => a.ToDto())],
-            maxTokens: 4096,
             additionalSizeInBytes: 0);
 
         return new Prompt(

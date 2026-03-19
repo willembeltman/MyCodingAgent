@@ -1,22 +1,23 @@
 ﻿using MyCodingAgent.Interfaces;
 using MyCodingAgent.Models;
-using MyCodingAgent.Shared;
 using MyCodingAgent.Shared.Enums;
+using MyCodingAgent.Shared.Helpers;
 using MyCodingAgent.Shared.Interfaces;
 using MyCodingAgent.Shared.Models;
 using System.Text.Json;
 
 namespace MyCodingAgent.Agents;
 
-public abstract class BaseAgent(Workspace Workspace, ILlmClient Client)
+public abstract class BaseAgent(ILlmClient Client, Workspace Workspace, Model model)
 {
     protected abstract List<PromptResponseResults> History { get; }
     protected abstract IToolCall[] Tools { get; }
 
-    protected Workspace Workspace { get; } = Workspace;
     protected ILlmClient Client { get; } = Client;
+    protected Workspace Workspace { get; } = Workspace;
+    protected Model Model { get; } = model;
 
-    protected void AddHistoryAndToolCalls(List<Message> messageList, List<PromptResponseResults> history, Tool[] tools, int maxTokens, int additionalSizeInBytes)
+    protected void AddHistoryAndToolCalls(List<Message> messageList, List<PromptResponseResults> history, Tool[] tools, int additionalSizeInBytes)
     {
         var notNullHistory = history
             .Where(a =>
@@ -75,14 +76,14 @@ public abstract class BaseAgent(Workspace Workspace, ILlmClient Client)
                 totalLength += messageJson.Length;
             }
 
-            if (totalLength < maxTokens * 3)
+            if (totalLength < (Model.MaxTokenSize ?? 4096) * 3)
                 maxLongDesciptionPrompt++;
             else
             {
                 useShortContent = true;
             }
 
-            if (totalLength < maxTokens * 3)
+            if (totalLength < (Model.MaxTokenSize ?? 4096) * 3)
                 maxHistory++;
             else
             {

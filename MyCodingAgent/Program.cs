@@ -1,23 +1,18 @@
-﻿using MyCodingAgent.Agents;
+﻿using Microsoft.Extensions.Configuration;
+using MyCodingAgent.Agents;
 using MyCodingAgent.Interfaces;
 using MyCodingAgent.Models;
 using MyCodingAgent.OllamaClient;
+using MyCodingAgent.OpenAiClient;
+using MyCodingAgent.Shared.Interfaces;
 using MyCodingAgent.Shared.Models;
 
 internal class Program : IDisposable
 {
     readonly CancellationTokenSource Cts;
-    //readonly HashSet<OllamaMessage> ShownMessages;
-    readonly Client LlmService;
+    readonly ILlmClient LlmService;
 
     private Program()
-    {
-        Cts = new CancellationTokenSource();
-        //ShownMessages = new HashSet<OllamaMessage>();
-        LlmService = new Client();
-    }
-
-    private async Task StartAsync()
     {
         Console.Clear();
 
@@ -26,8 +21,29 @@ internal class Program : IDisposable
         Console.WriteLine();
 
         Console.ForegroundColor = ConsoleColor.DarkGray;
-        Console.WriteLine("Loading workspace, please wait...");
+        Console.WriteLine("Loading appsettings, please wait...");
 
+        var builder = new ConfigurationBuilder()
+            .SetBasePath(Directory.GetCurrentDirectory())
+            .AddJsonFile("appsettings.json", optional: true)
+            .AddJsonFile("appsettings.Development.json", optional: true)
+            .AddEnvironmentVariables();
+
+        var configuration = builder.Build();
+        var apiKey = configuration["OpenAI:ApiKey"];
+        if (string.IsNullOrEmpty(apiKey))
+        {
+            throw new Exception("Cannot find apiKey in appsettings.json");
+        }
+
+        Console.WriteLine("Appsettings loaded, loading workspace, please wait...");
+
+        Cts = new CancellationTokenSource();
+        LlmService = new ChatGpt_Client(apiKey);
+    }
+
+    private async Task StartAsync()
+    {
         var workspaceDirectory = Path.Combine(Environment.CurrentDirectory, "Source");
         var workspace = await Workspace.TryLoad(workspaceDirectory);
         if (workspace == null || workspace.Flags.WorkIsDoneFlag)
@@ -41,7 +57,7 @@ internal class Program : IDisposable
         await LlmService.InitializeModelAsync(model);
 
         Console.WriteLine($"Model '{model.Name}' initialized, initialising agents, please wait...");
-        var team = new Team(workspace, LlmService);
+        var team = new Team(LlmService, workspace, model);
 
         //Console.WriteLine("Agents initialized, attempting to compile workspace, please wait...");
         //var compileResult = await workspace.Compile();
@@ -319,15 +335,10 @@ internal class Program : IDisposable
                 Console.WriteLine($"{i}. {list[i].Name} (size: {list[i].MemorySize})");
             }
             Console.WriteLine();
-            var key = Console.ReadKey();
-
-            if (char.IsDigit(key.KeyChar))
+            var numberString = Console.ReadLine();
+            if ( int.TryParse(numberString, out var number))
             {
-                var choice = key.KeyChar - '0';
-                if (choice >= 0 && choice < list.Length)
-                {
-                    model = list[choice];
-                }
+                model = list[number];
             }
         }
 
