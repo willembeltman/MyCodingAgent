@@ -1,9 +1,7 @@
 ﻿using MyCodingAgent.Interfaces;
 using MyCodingAgent.Models;
 using MyCodingAgent.Helpers;
-using MyCodingAgent.Models;
 using System.Text;
-using System.Text.RegularExpressions;
 
 namespace MyCodingAgent.ToolCalls;
 

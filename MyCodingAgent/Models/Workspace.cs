@@ -1,5 +1,4 @@
 ﻿using MyCodingAgent.Helpers;
-using MyCodingAgent.Helpers;
 using MyCodingAgent.ToolCalls.AgentCommunication.Models;
 using System.Text;
 using System.Text.Json;
@@ -9,7 +8,6 @@ namespace MyCodingAgent.Models;
 
 public class Workspace
 {
-    public int PromptIndex { get; set; }
     public string RootDirectoryName { get; set; } = string.Empty;
     public string UserPrompt { get; set; } = string.Empty;
     public int? CurrentSubTask { get; set; }
@@ -17,9 +15,11 @@ public class Workspace
     public List<WorkspaceOriginalFile> OriginalFiles { get; set; } = [];
     public List<WorkspaceFile> Files { get; set; } = [];
     public List<WorkspaceSubTask> SubTasks { get; set; } = [];
-    public List<PromptResponseResults> PlanningHistory { get; set; } = [];
-    public List<PromptResponseResults> CodingHistory { get; set; } = [];
-    public List<PromptResponseResults> DebugHistory { get; set; } = [];
+    public List<WorkspaceInboxMessage> InboxMessages { get; set; } = [];
+    public List<WorkspaceHistory> History { get; set; } = [];
+    public List<ResponseResults> PlanningHistory { get; set; } = [];
+    public List<ResponseResults> CodingHistory { get; set; } = [];
+    public List<ResponseResults> DebugHistory { get; set; } = [];
     public CoderNeedsProjectManager_Question? CodingAgent_To_ProjectManagerAgent_Question { get; set; }
     public DebuggerNeedsProjectManager_Question? DebugAgent_To_ProjectManagerAgent_Question { get; set; }
     public DebuggerNeedsCoder_Question? DebugAgent_To_CoderAgent_Question { get; set; }

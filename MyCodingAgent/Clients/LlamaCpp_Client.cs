@@ -73,17 +73,17 @@ public class LlamaCpp_Client : IDisposable, IClient
         return translated;
     }
 
-    public async Task<Response> ChatAsync(Model model, Prompt prompt, CancellationToken ct = default)
+    public async Task<Response> ChatAsync(Model model, ApiCall apiCall, CancellationToken ct = default)
     {
         var payload = new
         {
             model = model.Name,
-            messages = prompt.messages.Select(m => new
+            messages = apiCall.Messages.Select(m => new
             {
                 role = m.Role,
                 content = m.Content
             }),
-            tools = prompt.tools.Select(tool => new
+            tools = apiCall.Tools.Select(tool => new
             {
                 type = "function",
                 function = new
@@ -174,17 +174,17 @@ public class LlamaCpp_Client : IDisposable, IClient
         return JsonSerializer.Serialize(tools, DefaultJsonSerializerOptions.JsonSerializeOptionsIndented);
     }
 
-    public string CreateRequestJson(Model model, Prompt prompt)
+    public string CreateRequestJson(Model model, ApiCall apiCall)
     {
         var payload = new
         {
             model = model.Name,
-            messages = prompt.messages.Select(m => new { role = m.Role, content = m.Content }),
+            messages = apiCall.Messages.Select(m => new { role = m.Role, content = m.Content }),
             temperature = 0.1,
             top_p = 0.9,
             repeat_penalty = 1.1,
             max_tokens = 8192,
-            tools = prompt.tools
+            tools = apiCall.Tools
         };
 
         return JsonSerializer.Serialize(payload, DefaultJsonSerializerOptions.JsonSerializeOptionsIndented);

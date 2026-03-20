@@ -85,9 +85,9 @@ public class ChatGpt_Client : IDisposable, IClient
         return translated;
     }
 
-    public async Task<Response> ChatAsync(Model model, Prompt prompt, CancellationToken ct = default)
+    public async Task<Response> ChatAsync(Model model, ApiCall apiCall, CancellationToken ct = default)
     {
-        string payloadJson = CreateRequestJson(model, prompt);
+        string payloadJson = CreateRequestJson(model, apiCall);
 
         var responseJson = await DoCall(payloadJson, ct);
         var doc = JsonDocument.Parse(responseJson);
@@ -197,13 +197,13 @@ public class ChatGpt_Client : IDisposable, IClient
     }
 
     // Let op: onderdeel van de interface
-    public string CreateRequestJson(Model model, Prompt prompt)
+    public string CreateRequestJson(Model model, ApiCall apiCall)
     {
         var payload = new
         {
             model = model.Name,
-            messages = prompt.messages.Select(m => new { role = m.Role, content = m.Content }).ToArray(),
-            functions = prompt.tools.Select(tool => new
+            messages = apiCall.Messages.Select(m => new { role = m.Role, content = m.Content }).ToArray(),
+            functions = apiCall.Tools.Select(tool => new
             {
                 name = tool.Name,
                 description = tool.Desciption,

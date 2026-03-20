@@ -1,8 +1,6 @@
-﻿using MyCodingAgent.Agents;
-using MyCodingAgent.Interfaces;
+﻿using MyCodingAgent.Interfaces;
 using MyCodingAgent.Models;
 using MyCodingAgent.Enums;
-using MyCodingAgent.Models;
 using MyCodingAgent.ToolCalls;
 using MyCodingAgent.ToolCalls.AgentCommunication;
 
@@ -26,15 +24,16 @@ public class Debugger_Agent : BaseAgent, IAgent
         ];
     }
 
+    public string AgentName => "Debugger_Agent";
     public Workspace_Tool WorkspaceTool { get; }
     public DebuggingIsDone_Tool DebugAgentIsDoneTool { get; }
     public DebuggerNeedsCoder_Tool AskCoderAgentTool { get; }
     //public DebugAgent_To_ProjectManager_Question_Tool AskProjectManagerTool { get; }
 
-    protected override List<PromptResponseResults> History => Workspace.DebugHistory;
+    protected override List<ResponseResults> History => Workspace.DebugHistory;
     protected override IToolCall[] Tools { get; }
 
-    public async Task<Prompt> GeneratePrompt()
+    public async Task<ApiCall> GenerateApiCall()
     {
         var compileResult = await Workspace.Compile();
         List <Message> messageList =
@@ -89,24 +88,8 @@ If there are 0 errors in the compilation result, immediately call '{DebugAgentIs
             [.. Tools.Select(a => a.ToDto())],
             additionalSizeInBytes: 0);
 
-        return new Prompt(
+        return new ApiCall(
             [.. messageList],
             [.. Tools.Select(a => a.ToDto())]);
-    }
-
-    /// <summary>
-    /// Processes the agent's response to the specified prompt and determines whether any tool call completed without error.
-    /// </summary>
-    /// <param name="prompt">The prompt that was sent to the agent. This provides the context or question for which the response is being
-    /// processed.</param>
-    /// <param name="agentResponse">The response object returned by the agent, containing the results to be evaluated.</param>
-    /// <returns>if there was any tool call, if not this indicates maybe a different agent should continue</returns>
-    public Task<bool> ProcessResponse(Prompt prompt, Response agentResponse)
-        => ProcessResponse(prompt, agentResponse, true);
-    public async Task<bool> ProcessResponse(Prompt prompt, Response agentResponse, bool save)
-    {
-        var response = await GetAgentResponseResult(prompt, agentResponse, Tools);
-        if (save) History.Add(response);
-        return response.ToolCallResults.Any(a => a.result.error == false);
     }
 }

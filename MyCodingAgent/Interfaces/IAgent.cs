@@ -1,9 +1,12 @@
-﻿using MyCodingAgent.Models;
+﻿using MyCodingAgent.Enums;
+using MyCodingAgent.Models;
 
 namespace MyCodingAgent.Interfaces;
 
 public interface IAgent
 {
-    Task<Prompt> GeneratePrompt();
-    Task<bool> ProcessResponse(Prompt prompt, Response agentResponse);
+    AgentType AgentName { get; }
+
+    Task<ApiCall> GenerateApiCall();
+    Task<ResponseResults> ProcessResponse(ApiCall apiCall, Response agentResponse);
 }

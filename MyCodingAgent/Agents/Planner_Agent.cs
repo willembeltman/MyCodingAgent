@@ -1,14 +1,13 @@
 ﻿using MyCodingAgent.Interfaces;
 using MyCodingAgent.Models;
 using MyCodingAgent.Enums;
-using MyCodingAgent.Models;
 using MyCodingAgent.ToolCalls;
 
 namespace MyCodingAgent.Agents;
 
-public class ProjectManagerPlanner_Agent : BaseAgent, IAgent
+public class Planner_Agent : BaseAgent, IAgent
 {
-    public ProjectManagerPlanner_Agent(IClient client, Workspace workspace, Model model) : base(client, workspace, model)
+    public Planner_Agent(IClient client, Workspace workspace, Model model) : base(client, workspace, model)
     {
         WorkspaceTool = new WorkspaceReadonly_Tool(workspace);
         SubTasksTool = new SubTasks_Tool(workspace);
@@ -24,15 +23,16 @@ public class ProjectManagerPlanner_Agent : BaseAgent, IAgent
         ];
     }
 
+    public string AgentName => "ProjectManagerPlanner_Agent";
     public WorkspaceReadonly_Tool WorkspaceTool { get; }
     public SubTasks_Tool SubTasksTool { get; }
     public AskHumanDeveloper_Tool AskHumanDeveloperTool { get; }
     public WorkIsAlreadyDone_Tool WorkIsAlreadyDoneTool { get; }
 
-    protected override List<PromptResponseResults> History => Workspace.PlanningHistory;
+    protected override List<ResponseResults> History => Workspace.PlanningHistory;
     protected override IToolCall[] Tools { get; }
 
-    public async Task<Prompt> GeneratePrompt()
+    public async Task<ApiCall> GenerateApiCall()
     {
         List<Message> messageList = 
         [
@@ -93,22 +93,8 @@ If the requested functionality already exists in the codebase you may call {Work
             [ ..Tools.Select(a => a.ToDto())],
             additionalSizeInBytes: 0);
 
-        return new Prompt(
+        return new ApiCall(
             [.. messageList],
             [.. Tools.Select(a => a.ToDto())]);
-    }
-
-    /// <summary>
-    /// Processes the agent's response to the specified prompt and determines whether any tool call completed without error.
-    /// </summary>
-    /// <param name="prompt">The prompt that was sent to the agent. This provides the context or question for which the response is being
-    /// processed.</param>
-    /// <param name="agentResponse">The response object returned by the agent, containing the results to be evaluated.</param>
-    /// <returns>if there was any tool call, if not this indicates maybe a different agent should continue</returns>
-    public async Task<bool> ProcessResponse(Prompt prompt, Response agentResponse)
-    {
-        var response = await GetAgentResponseResult(prompt, agentResponse, Tools);
-        History.Add(response);
-        return response.ToolCallResults.Any(a => a.result.error == false);
     }
 }

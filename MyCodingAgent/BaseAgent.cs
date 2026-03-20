@@ -2,21 +2,20 @@
 using MyCodingAgent.Models;
 using MyCodingAgent.Enums;
 using MyCodingAgent.Helpers;
-using MyCodingAgent.Models;
 using System.Text.Json;
 
-namespace MyCodingAgent.Agents;
+namespace MyCodingAgent;
 
 public abstract class BaseAgent(IClient Client, Workspace Workspace, Model model)
 {
-    protected abstract List<PromptResponseResults> History { get; }
+    protected abstract List<ResponseResults> History { get; }
     protected abstract IToolCall[] Tools { get; }
 
     protected IClient Client { get; } = Client;
     protected Workspace Workspace { get; } = Workspace;
     protected Model Model { get; } = model;
 
-    protected void AddHistoryAndToolCalls(List<Message> messageList, List<PromptResponseResults> history, Tool[] tools, int additionalSizeInBytes)
+    protected void AddHistoryAndToolCalls(List<Message> messageList, List<ResponseResults> history, Tool[] tools, int additionalSizeInBytes)
     {
         var notNullHistory = history
             .Where(a =>
@@ -61,16 +60,17 @@ public abstract class BaseAgent(IClient Client, Workspace Workspace, Model model
                     if (!shownMessages.Add(cacheMessage)) // Todo, als het model ooit meerdere actions gaat uitvoeren
                     {
                         notNullHistory.Remove(responseResult);
+                        continue;
                     }
 
-                    var message = CreateToolCallbackMessage(useShortContent, toolCall);
+                    var message = CreateToolCallbackMessage(false, toolCall);
                     var messageJson = JsonSerializer.Serialize(message, DefaultJsonSerializerOptions.JsonSerializeOptionsIndented);
                     totalLength += messageJson.Length;
                 }
             }
             else
             {
-                var message = CreateToolCallbackMessage(useShortContent, null);
+                var message = CreateToolCallbackMessage(false, null);
                 var messageJson = JsonSerializer.Serialize(message, DefaultJsonSerializerOptions.JsonSerializeOptionsIndented);
                 totalLength += messageJson.Length;
             }
@@ -107,13 +107,13 @@ public abstract class BaseAgent(IClient Client, Workspace Workspace, Model model
             {
                 foreach (var toolCall in responseResult.ToolCallResults)
                 {
-                    messageList.Add(CreateToolCallbackMessage(i > maxLongDesciptionPrompt, toolCall));
+                    messageList.Add(CreateToolCallbackMessage(false, toolCall));// i > maxLongDesciptionPrompt, toolCall));
                 }
             }
             else
             {
                 messageList.Add(
-                    CreateToolCallbackMessage(i > maxLongDesciptionPrompt, null));
+                    CreateToolCallbackMessage(false, null));//i > maxLongDesciptionPrompt, null));
             }
 
             i--;
@@ -174,12 +174,12 @@ public abstract class BaseAgent(IClient Client, Workspace Workspace, Model model
         return new Message(
             nameof(AgentRole.Tool).ToLower(),
             toolCall?.tool_call.Id,
-            toolCall == null ? "Error: no tool_calls found" : false ? toolCall.result.shortContent : toolCall.result.content,
+            toolCall == null ? "Error: no tool_calls found" : useShortContent ? toolCall.result.shortContent : toolCall.result.content,
             null,
             null);
     }
 
-    protected static async Task<PromptResponseResults> GetAgentResponseResult(Prompt prompt, Response response, IToolCall[] tools)
+    public async Task<ResponseResults> ProcessResponse(ApiCall apiCall, Response response)
     {
         var list = new List<ToolCallResult>();
         if (response.message.ToolCalls != null)
@@ -189,7 +189,7 @@ public abstract class BaseAgent(IClient Client, Workspace Workspace, Model model
                 var toolName = tool_call.Function.Name;
                 var toolArguments = tool_call.Function.Arguments;
 
-                var tool = tools.FirstOrDefault(a => a.Name == toolName);
+                var tool = Tools.FirstOrDefault(a => a.Name == toolName);
                 if (tool == null)
                 {
                     list.Add(new ToolCallResult(
@@ -209,9 +209,12 @@ public abstract class BaseAgent(IClient Client, Workspace Workspace, Model model
                 }
             }
         }
-        return new PromptResponseResults(
-            prompt,
+        var results = new ResponseResults(
+            apiCall,
             response,
             [.. list]);
+
+        History.Add(results);
+        return results;
     }
 }

@@ -1,8 +1,4 @@
-﻿using MyCodingAgent.Helpers;
-using MyCodingAgent.Interfaces;
-using MyCodingAgent.Models;
-using MyCodingAgent.Models;
-using System.Text;
+﻿using MyCodingAgent.Models;
 using System.Text.RegularExpressions;
 
 namespace MyCodingAgent.ToolCalls;

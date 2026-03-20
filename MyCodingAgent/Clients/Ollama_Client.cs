@@ -103,9 +103,9 @@ public class Ollama_Client(
 
         return agentTranslation;
     }
-    public async Task<Response> ChatAsync(Model model, Prompt prompt, CancellationToken ct = default)
+    public async Task<Response> ChatAsync(Model model, ApiCall apiCall, CancellationToken ct = default)
     {
-        string payload = CreateRequestJson(model, prompt);
+        string payload = CreateRequestJson(model, apiCall);
 
         var reponseJson = await DoCall(payload, ct);
 
@@ -212,16 +212,16 @@ public class Ollama_Client(
     }}
   }}"));
     }
-    public string CreateRequestJson(Model model, Prompt prompt)
+    public string CreateRequestJson(Model model, ApiCall apiCall)
     {
         return $@"{{
   ""model"": ""{model.Name}"",
   ""options"": {{
     ""num_ctx"": 8192
   }},
-  ""messages"": {CreateMessagesJson(prompt.messages)},
+  ""messages"": {CreateMessagesJson(apiCall.Messages)},
   ""stream"": false,
-  ""tools"": [{CreateToolsJson(prompt.tools)}]
+  ""tools"": [{CreateToolsJson(apiCall.Tools)}]
 }}";
     }
 

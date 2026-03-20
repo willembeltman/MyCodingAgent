@@ -2,14 +2,13 @@
 using MyCodingAgent.Models;
 using MyCodingAgent.Enums;
 using MyCodingAgent.Helpers;
-using MyCodingAgent.Models;
 using MyCodingAgent.ToolCalls;
 using MyCodingAgent.ToolCalls.AgentCommunication;
 using System.Text.Json;
 
-namespace MyCodingAgent.Agents;
+namespace MyCodingAgent.EmailableAgents;
 
-public class ProjectManagerForCoding_Agent : BaseAgent, IAgent
+public class ProjectManagerForCoding_Agent : BaseAgent, IEmailableAgent
 {
     public ProjectManagerForCoding_Agent(IClient client, Workspace workspace, Model model) : base(client, workspace, model)
     {
@@ -25,14 +24,16 @@ public class ProjectManagerForCoding_Agent : BaseAgent, IAgent
         ];
     }
 
+    public AgentType AgentName => AgentType.ProjectManager;
+    public AgentType AcceptsFrom_AgentName => AgentType.Coder;
+    protected override List<ResponseResults> History => Workspace.PlanningHistory;
+
     public CoderNeedsProjectManagerAnswer_Tool AnswerCoderAgentTool { get; }
     public SubTasks_Tool SubTasksTool { get; }
     public WorkspaceReadonly_Tool WorkspaceReadonlyTool { get; }
-
-    protected override List<PromptResponseResults> History => Workspace.PlanningHistory;
     protected override IToolCall[] Tools { get; }
 
-    public async Task<Prompt> GeneratePrompt()
+    public async Task<ApiCall> GenerateApiCall()
     {
         if (Workspace.CodingAgent_To_ProjectManagerAgent_Question == null)
             throw new Exception("No active job found for Project Manager.");
@@ -103,22 +104,8 @@ Please analyze the request above against the subtask definition and provide the 
         // Voeg de actuele vraag als laatste toe zodat deze de meeste prioriteit heeft
         messageList.Add(question);
 
-        return new Prompt(
+        return new ApiCall(
             [.. messageList],
             [.. Tools.Select(a => a.ToDto())]);
-    }
-
-    /// <summary>
-    /// Processes the agent's response to the specified prompt and determines whether any tool call completed without error.
-    /// </summary>
-    /// <param name="prompt">The prompt that was sent to the agent. This provides the context or question for which the response is being
-    /// processed.</param>
-    /// <param name="agentResponse">The response object returned by the agent, containing the results to be evaluated.</param>
-    /// <returns>if there was any tool call, if not this indicates maybe a different agent should continue</returns>
-    public async Task<bool> ProcessResponse(Prompt prompt, Response agentResponse)
-    {
-        var response = await GetAgentResponseResult(prompt, agentResponse, Tools);
-        History.Add(response);
-        return response.ToolCallResults.Any(a => a.result.error == false);
     }
 }

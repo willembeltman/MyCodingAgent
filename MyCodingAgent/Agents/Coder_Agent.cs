@@ -1,7 +1,6 @@
 ﻿using MyCodingAgent.Interfaces;
 using MyCodingAgent.Models;
 using MyCodingAgent.Enums;
-using MyCodingAgent.Models;
 using MyCodingAgent.ToolCalls;
 using MyCodingAgent.ToolCalls.AgentCommunication;
 
@@ -23,14 +22,15 @@ public class Coder_Agent : BaseAgent, IAgent
         ];
     }
 
+    public string AgentName => "Coder_Agent";
     public Workspace_Tool WorkspaceTool { get; }
     public CoderNeedsProjectManager_Tool AskProjectManagerTool { get; }
     public SubTaskIsFinished_Tool CurrentSubTaskIsFinishedTool { get; }
 
-    protected override List<PromptResponseResults> History => Workspace.CodingHistory;
+    protected override List<ResponseResults> History => Workspace.CodingHistory;
     protected override IToolCall[] Tools { get; }
 
-    public async Task<Prompt> GeneratePrompt()
+    public async Task<ApiCall> GenerateApiCall()
     {
         List<Message> messageList =
         [
@@ -84,24 +84,9 @@ RULES
             [.. Tools.Select(a => a.ToDto())],
             additionalSizeInBytes: 0);
 
-        return new Prompt(
+        return new ApiCall(
             [.. messageList],
             [.. Tools.Select(a => a.ToDto())]);
     }
 
-    /// <summary>
-    /// Processes the agent's response to the specified prompt and determines whether any tool_call call completed without error.
-    /// </summary>
-    /// <param name="prompt">The prompt that was sent to the agent. This provides the context or question for which the response is being
-    /// processed.</param>
-    /// <param name="agentResponse">The response object returned by the agent, containing the results to be evaluated.</param>
-    /// <returns>if there was any tool_call call, if not this indicates maybe a different agent should continue</returns>
-    public Task<bool> ProcessResponse(Prompt prompt, Response agentResponse)
-        => ProcessResponse(prompt, agentResponse, true);
-    public async Task<bool> ProcessResponse(Prompt prompt, Response agentResponse, bool save)
-    {
-        var response = await GetAgentResponseResult(prompt, agentResponse, Tools);
-        if (save) History.Add(response);
-        return response.ToolCallResults.Any(a => a.result.error == false);
-    }
 }

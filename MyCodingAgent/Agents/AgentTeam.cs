@@ -1,26 +1,38 @@
-﻿using MyCodingAgent.Agents;
-using MyCodingAgent.Models;
+﻿using MyCodingAgent.Models;
 using MyCodingAgent.Interfaces;
-using MyCodingAgent.Models;
+using MyCodingAgent.EmailableAgents;
+
+namespace MyCodingAgent.Agents;
 
 public class AgentTeam
 {
+    public Planner_Agent Planner { get; }
+    public Coder_Agent Coder { get; }
+    public Debugger_Agent Debugger { get; }
+    public CodeReviewer_Agent CodeReviewer { get; }
+
+    public CoderForDebugger_Agent CoderForDebugger { get; }
+    public ProjectManagerForCoding_Agent ProjectManagerForCoder { get; }
+    public ProjectManagerForDebugger_Agent ProjectManagerForDebugger { get; }
+    public IEmailableAgent[] EmailableAgents { get; }
+
     public AgentTeam(IClient client, Workspace workspace, Model model)
     {
-        codingAgent = new Coder_Agent(client, workspace, model);
-        codingForDebugAgent = new CoderForDebugger_Agent(client, workspace, model);
-        debuggerAgent = new Debugger_Agent(client, workspace, model);
-        projectManagerPlannerAgent = new ProjectManagerPlanner_Agent(client, workspace, model);
-        projectManagerForCodingAgent = new ProjectManagerForCoding_Agent(client, workspace, model);
-        projectManagerForDebuggerAgent = new ProjectManagerForDebugger_Agent(client, workspace, model);
-        projectManagerCodeReviewerAgent = new ProjectManagerCodeReviewer_Agent(client, workspace, model);
-    }
+        Planner = new Planner_Agent(client, workspace, model);
+        Coder = new Coder_Agent(client, workspace, model);
+        Debugger = new Debugger_Agent(client, workspace, model);
+        CodeReviewer = new CodeReviewer_Agent(client, workspace, model);
 
-    public ProjectManagerPlanner_Agent projectManagerPlannerAgent { get; }
-    public Coder_Agent codingAgent { get; }
-    public CoderForDebugger_Agent codingForDebugAgent { get; }
-    public Debugger_Agent debuggerAgent { get; }
-    public ProjectManagerForCoding_Agent projectManagerForCodingAgent { get; }
-    public ProjectManagerForDebugger_Agent projectManagerForDebuggerAgent { get; }
-    public ProjectManagerCodeReviewer_Agent projectManagerCodeReviewerAgent { get; }
+        CoderForDebugger = new CoderForDebugger_Agent(client, workspace, model);
+        ProjectManagerForCoder = new ProjectManagerForCoding_Agent(client, workspace, model);
+        ProjectManagerForDebugger = new ProjectManagerForDebugger_Agent(client, workspace, model);
+
+        EmailableAgents =
+        [
+            CoderForDebugger,
+            ProjectManagerForCoder,
+            ProjectManagerForDebugger
+        ];
+
+    }
 }

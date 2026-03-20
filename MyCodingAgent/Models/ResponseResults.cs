@@ -2,7 +2,7 @@
 
 namespace MyCodingAgent.Models;
 
-public record PromptResponseResults(
-    Prompt Prompt,
+public record ResponseResults(
+    ApiCall Prompt,
     Response Response,
     List<ToolCallResult> ToolCallResults);

@@ -1,5 +1,4 @@
 ﻿using MyCodingAgent.Models;
-using MyCodingAgent.Models;
 
 namespace MyCodingAgent.Interfaces;
 
