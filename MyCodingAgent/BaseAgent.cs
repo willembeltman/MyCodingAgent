@@ -63,6 +63,7 @@ public abstract class BaseAgent(IClient Client, Workspace Workspace, Model model
                         continue;
                     }
 
+                    if (useShortContent) { }
                     var message = CreateToolCallbackMessage(false, toolCall);
                     var messageJson = JsonSerializer.Serialize(message, DefaultJsonSerializerOptions.JsonSerializeOptionsIndented);
                     totalLength += messageJson.Length;

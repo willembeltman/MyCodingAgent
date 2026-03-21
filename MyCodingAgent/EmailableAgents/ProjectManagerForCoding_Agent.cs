@@ -3,7 +3,6 @@ using MyCodingAgent.Models;
 using MyCodingAgent.Enums;
 using MyCodingAgent.Helpers;
 using MyCodingAgent.ToolCalls;
-using MyCodingAgent.ToolCalls.AgentCommunication;
 using System.Text.Json;
 
 namespace MyCodingAgent.EmailableAgents;
@@ -12,7 +11,10 @@ public class ProjectManagerForCoding_Agent : BaseAgent, IEmailableAgent
 {
     public ProjectManagerForCoding_Agent(IClient client, Workspace workspace, Model model) : base(client, workspace, model)
     {
-        AnswerCoderAgentTool = new CoderNeedsProjectManagerAnswer_Tool(workspace);
+        AnswerCoderAgentTool = new AgentToAgent_Answer_Tool(workspace,
+            "answer_coder_question",
+            "Provide the official response or missing technical details to a Coding Agents question",
+            "The detailed answer or instruction that will be sent back to the coding agent");
         SubTasksTool = new SubTasks_Tool(workspace);
         WorkspaceReadonlyTool = new WorkspaceReadonly_Tool(workspace);
 
@@ -25,17 +27,20 @@ public class ProjectManagerForCoding_Agent : BaseAgent, IEmailableAgent
     }
 
     public AgentType AgentName => AgentType.ProjectManager;
-    public AgentType AcceptsFrom_AgentName => AgentType.Coder;
+    public AgentType[] AcceptsFrom_AgentName => [ AgentType.Coder ];
     protected override List<ResponseResults> History => Workspace.PlanningHistory;
 
-    public CoderNeedsProjectManagerAnswer_Tool AnswerCoderAgentTool { get; }
+    public AgentToAgent_Answer_Tool AnswerCoderAgentTool { get; }
     public SubTasks_Tool SubTasksTool { get; }
     public WorkspaceReadonly_Tool WorkspaceReadonlyTool { get; }
     protected override IToolCall[] Tools { get; }
 
+    public void SetCurrentMessage(WorkspaceInboxMessage? message)
+        => AnswerCoderAgentTool.SetCurrentMessage(message);
     public async Task<ApiCall> GenerateApiCall()
     {
-        if (Workspace.CodingAgent_To_ProjectManagerAgent_Question == null)
+        var message = AnswerCoderAgentTool.Message;
+        if (message == null)
             throw new Exception("No active job found for Project Manager.");
 
         List<Message> messageList =
@@ -77,7 +82,7 @@ When you have the answer, you MUST call '{AnswerCoderAgentTool.Name}'.",
 
         // De vraag van de Coder verpakken we als een specifieke User-message
         var questionContent = $@"### INCOMING CODER AGENT REQUEST
-{Workspace.CodingAgent_To_ProjectManagerAgent_Question.Question}
+{message.Question}
 
 ### CONTEXT: CURRENT SUBTASK DEFINITION
 {Workspace.GetCurrentSubTask()?.Content}

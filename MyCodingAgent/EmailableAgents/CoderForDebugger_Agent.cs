@@ -3,7 +3,6 @@ using MyCodingAgent.Models;
 using MyCodingAgent.Enums;
 using MyCodingAgent.Helpers;
 using MyCodingAgent.ToolCalls;
-using MyCodingAgent.ToolCalls.AgentCommunication;
 using System.Text.Json;
 
 namespace MyCodingAgent.EmailableAgents;
@@ -13,7 +12,10 @@ public class CoderForDebugger_Agent : BaseAgent, IEmailableAgent
     public CoderForDebugger_Agent(IClient client, Workspace workspace, Model model) : base(client, workspace, model)
     {
         WorkspaceTool = new WorkspaceReadonly_Tool(workspace);
-        AnswerDebugAgentTool = new DebuggerNeedsCoderAnswer_Tool(workspace);
+        AnswerDebugAgentTool = new AgentToAgent_Answer_Tool(workspace,
+            "answer_debug_question",
+            "Provide the official response or missing technical details to a Debug Agent question",
+            "The detailed answer or instruction that will be sent back to the coding agent");
 
         Tools =
         [
@@ -23,17 +25,21 @@ public class CoderForDebugger_Agent : BaseAgent, IEmailableAgent
     }
 
     public AgentType AgentName => AgentType.Coder;
-    public AgentType AcceptsFrom_AgentName => AgentType.Debugger;
+    public AgentType[] AcceptsFrom_AgentName => [ AgentType.Debugger ];
     protected override List<ResponseResults> History => Workspace.PlanningHistory;
 
     public WorkspaceReadonly_Tool WorkspaceTool { get; }
-    public DebuggerNeedsCoderAnswer_Tool AnswerDebugAgentTool { get; }
+    public AgentToAgent_Answer_Tool AnswerDebugAgentTool { get; }
     protected override IToolCall[] Tools { get; }
+    private WorkspaceInboxMessage? Message { get; set; }
 
+    public void SetCurrentMessage(WorkspaceInboxMessage? message)
+        => AnswerDebugAgentTool.SetCurrentMessage(message);
     public async Task<ApiCall> GenerateApiCall()
     {
-        if (Workspace.CodingAgent_To_ProjectManagerAgent_Question == null)
-            throw new Exception("No active job found for Project Manager.");
+        var message = AnswerDebugAgentTool.Message;
+        if (Message == null)
+            throw new Exception("No active message found for CodingForDebugger_Agent.");
 
         List<Message> messageList =
         [
@@ -69,7 +75,7 @@ When you have the answer, you MUST call '{AnswerDebugAgentTool.Name}'.",
 
         // De vraag van de DebugAgent verpakken we als een specifieke User-message
         var questionContent = $@"### INCOMING DEBUG AGENT REQUEST
-{Workspace.CodingAgent_To_ProjectManagerAgent_Question.Question}
+{Message.Question}
 
 ### CONTEXT: CURRENT SUBTASK DEFINITION
 {Workspace.GetCurrentSubTask()?.Content}

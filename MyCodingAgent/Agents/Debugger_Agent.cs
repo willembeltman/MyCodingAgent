@@ -2,7 +2,6 @@
 using MyCodingAgent.Models;
 using MyCodingAgent.Enums;
 using MyCodingAgent.ToolCalls;
-using MyCodingAgent.ToolCalls.AgentCommunication;
 
 namespace MyCodingAgent.Agents;
 
@@ -12,23 +11,23 @@ public class Debugger_Agent : BaseAgent, IAgent
     {
         WorkspaceTool = new Workspace_Tool(workspace);
         DebugAgentIsDoneTool = new DebuggingIsDone_Tool(workspace);
-        AskCoderAgentTool = new DebuggerNeedsCoder_Tool(workspace);
-        //AskProjectManagerTool = new DebugAgent_To_ProjectManager_Question_Tool(workspace);
+        AskCoderAgentTool = new AgentToAgent_Question_Tool(workspace, AgentType.Debugger, AgentType.Coder,
+            "ask_coder_agent",
+            "Ask the coder agent for clarification or missing details",
+            "Question or missing information");
 
         Tools =
         [
             WorkspaceTool,
             DebugAgentIsDoneTool,
-            AskCoderAgentTool,
-            //AskProjectManagerTool
+            AskCoderAgentTool
         ];
     }
 
-    public string AgentName => "Debugger_Agent";
+    public AgentType AgentName => AgentType.Debugger;
     public Workspace_Tool WorkspaceTool { get; }
     public DebuggingIsDone_Tool DebugAgentIsDoneTool { get; }
-    public DebuggerNeedsCoder_Tool AskCoderAgentTool { get; }
-    //public DebugAgent_To_ProjectManager_Question_Tool AskProjectManagerTool { get; }
+    public AgentToAgent_Question_Tool AskCoderAgentTool { get; }
 
     protected override List<ResponseResults> History => Workspace.DebugHistory;
     protected override IToolCall[] Tools { get; }

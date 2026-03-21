@@ -2,7 +2,6 @@
 using MyCodingAgent.Models;
 using MyCodingAgent.Enums;
 using MyCodingAgent.ToolCalls;
-using MyCodingAgent.ToolCalls.AgentCommunication;
 
 namespace MyCodingAgent.Agents;
 
@@ -11,7 +10,10 @@ public class Coder_Agent : BaseAgent, IAgent
     public Coder_Agent(IClient client, Workspace workspace, Model model) : base(client, workspace, model)
     {
         WorkspaceTool = new Workspace_Tool(workspace);
-        AskProjectManagerTool = new CoderNeedsProjectManager_Tool(workspace);
+        AskProjectManagerTool = new AgentToAgent_Question_Tool(workspace, AgentType.Coder, AgentType.ProjectManager, 
+            "ask_project_manager_agent",
+            "Use when blocked by missing info or unclear requirements",
+            "The specific question or missing information needed to proceed with the task");
         CurrentSubTaskIsFinishedTool = new SubTaskIsFinished_Tool(workspace);
 
         Tools =
@@ -22,9 +24,9 @@ public class Coder_Agent : BaseAgent, IAgent
         ];
     }
 
-    public string AgentName => "Coder_Agent";
+    public AgentType AgentName => AgentType.Coder;
     public Workspace_Tool WorkspaceTool { get; }
-    public CoderNeedsProjectManager_Tool AskProjectManagerTool { get; }
+    public AgentToAgent_Question_Tool AskProjectManagerTool { get; }
     public SubTaskIsFinished_Tool CurrentSubTaskIsFinishedTool { get; }
 
     protected override List<ResponseResults> History => Workspace.CodingHistory;

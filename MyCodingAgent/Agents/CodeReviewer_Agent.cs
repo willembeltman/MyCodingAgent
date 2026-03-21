@@ -12,8 +12,8 @@ public class CodeReviewer_Agent : BaseAgent, IAgent
     {
         WorkspaceTool = new WorkspaceReadonly_Tool(workspace);
         SubTasksTool = new SubTasks_Tool(workspace);
-        AskHumanDeveloperTool = new AskHumanDeveloper_Tool(workspace);
         CodeReviewIsDoneTool = new CodeReviewIsDone_Tool(workspace);
+        AskHumanDeveloperTool = new AskHumanDeveloper_Question_Tool(workspace, AgentType.CodeReviewer);
 
         Tools =
         [
@@ -24,11 +24,11 @@ public class CodeReviewer_Agent : BaseAgent, IAgent
         ];
     }
 
-    public string AgentName => "ProjectManagerCodeReviewer_Agent";
+    public AgentType AgentName => AgentType.CodeReviewer;
     public WorkspaceReadonly_Tool WorkspaceTool { get; }
     public SubTasks_Tool SubTasksTool { get; }
-    public AskHumanDeveloper_Tool AskHumanDeveloperTool { get; }
     public CodeReviewIsDone_Tool CodeReviewIsDoneTool { get; }
+    public AskHumanDeveloper_Question_Tool AskHumanDeveloperTool { get; }
 
     protected override List<ResponseResults> History => Workspace.PlanningHistory;
     protected override IToolCall[] Tools { get; }

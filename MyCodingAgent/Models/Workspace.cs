@@ -1,5 +1,4 @@
 ﻿using MyCodingAgent.Helpers;
-using MyCodingAgent.ToolCalls.AgentCommunication.Models;
 using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
@@ -20,9 +19,6 @@ public class Workspace
     public List<ResponseResults> PlanningHistory { get; set; } = [];
     public List<ResponseResults> CodingHistory { get; set; } = [];
     public List<ResponseResults> DebugHistory { get; set; } = [];
-    public CoderNeedsProjectManager_Question? CodingAgent_To_ProjectManagerAgent_Question { get; set; }
-    public DebuggerNeedsProjectManager_Question? DebugAgent_To_ProjectManagerAgent_Question { get; set; }
-    public DebuggerNeedsCoder_Question? DebugAgent_To_CoderAgent_Question { get; set; }
 
     public WorkspaceFile? GetFile(string path)
         => Files.FirstOrDefault(a => a.RelativePath.Equals(path.Replace("/", "\\"), StringComparison.CurrentCultureIgnoreCase));

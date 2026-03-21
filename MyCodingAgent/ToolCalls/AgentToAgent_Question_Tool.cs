@@ -1,19 +1,23 @@
-﻿using MyCodingAgent.Interfaces;
+using MyCodingAgent.Interfaces;
 using MyCodingAgent.Models;
+using MyCodingAgent.Enums;
 
-namespace MyCodingAgent.ToolCalls.AgentCommunication;
+namespace MyCodingAgent.ToolCalls;
 
-public class DebuggerNeedsProjectManager_Tool(Workspace workspace) : IToolCall
+public class AgentToAgent_Question_Tool(
+    Workspace workspace,
+    AgentType from,
+    AgentType to,
+    string name,
+    string description,
+    string contentParameterDescription) 
+    : IToolCall
 {
-    public string Name
-        => "ask_project_manager_agent";
-
-    public string Description
-        => "Ask the project manager for clarification or missing details";
-
+    public string Name { get; set; } = name;
+    public string Description { get; set; } = description;
     public ToolParameter[] Parameters { get; } =
     [
-        new ("content", "string", "Question or missing information")
+        new ("content", "string", contentParameterDescription)
     ];
 
     public async Task<ToolResult> Invoke(ToolCall toolCall)
@@ -28,8 +32,8 @@ public class DebuggerNeedsProjectManager_Tool(Workspace workspace) : IToolCall
         if (toolCall.Id == null)
             throw new Exception("eeeuhm..");
 
-        workspace.DebugAgent_To_ProjectManagerAgent_Question =
-            new(toolCall.Id, toolArguments.Content);
+        workspace.InboxMessages.Add(
+            new(toolCall.Id, from, to, toolArguments.Content));
 
         var answer = "Waiting for answer..";
         return new ToolResult(

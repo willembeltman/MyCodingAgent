@@ -5,7 +5,7 @@ namespace MyCodingAgent.Interfaces;
 
 public interface IEmailableAgent : IAgent
 {
-    AgentType AcceptsFrom_AgentName { get; }
+    AgentType[] AcceptsFrom_AgentName { get; }
 
     void SetCurrentMessage(WorkspaceInboxMessage message);
 }

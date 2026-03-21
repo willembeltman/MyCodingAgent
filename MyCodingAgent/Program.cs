@@ -143,33 +143,6 @@ internal class Program : IDisposable
         }
         await workspace.Save();
     }
-    private async Task RunCoderNeedsProjectManagerLoop(Workspace workspace, Model model, AgentTeam team)
-    {
-        while (CoderNeedsProjectManager(workspace))
-        {
-            await AgentFlow(workspace, model, team.ProjectManagerForCoder);
-        }
-        await workspace.Save();
-        Console.Clear();
-    }
-    private async Task RunDebuggerNeedsProjectManagerLoop(Workspace workspace, Model model, AgentTeam team)
-    {
-        while (DebuggerNeedsProjectManager(workspace))
-        {
-            await AgentFlow(workspace, model, team.ProjectManagerForDebugger);
-        }
-        await workspace.Save();
-        Console.Clear();
-    }
-    private async Task RunDebuggerNeedsCoderLoop(Workspace workspace, Model model, AgentTeam team)
-    {
-        while (DebuggerNeedsCoder(workspace))
-        {
-            await AgentFlow(workspace, model, team.CoderForDebugger);
-        }
-        await workspace.Save();
-        Console.Clear();
-    }
     private async Task RunDebuggerLoop(Workspace workspace, Model model, AgentTeam team, CompileResult compileResult)
     {
         while (NeedsDebugging(workspace, compileResult))
@@ -212,52 +185,14 @@ internal class Program : IDisposable
     }
     private static bool NeedsDebugging(Workspace workspace, CompileResult compileResult)
     {
-        if (workspace.DebugAgent_To_CoderAgent_Question != null ||
-            workspace.DebugAgent_To_ProjectManagerAgent_Question != null)
-            return false;
-
-        if (workspace.Flags.IsDebuggingFlag)
-            return true;
-
-        var res = compileResult.Errors.Count > 0 &&
-               workspace.Files.Count > 0 &&
-               workspace.CodingAgent_To_ProjectManagerAgent_Question == null &&
-               workspace.DebugAgent_To_ProjectManagerAgent_Question == null;
-        if (res)
-        {
-            workspace.Flags.IsDebuggingFlag = true;
-            Console.Clear();
-        }
-        return res;
-    }
-    private static bool CoderNeedsProjectManager(Workspace workspace)
-    {
-        return
-            workspace.CodingAgent_To_ProjectManagerAgent_Question != null;
-    }
-    private static bool DebuggerNeedsCoder(Workspace workspace)
-    {
-        return
-            workspace.DebugAgent_To_CoderAgent_Question != null;
-    }
-    private static bool DebuggerNeedsProjectManager(Workspace workspace)
-    {
-        return
-            workspace.DebugAgent_To_ProjectManagerAgent_Question != null;
+        return compileResult.Errors.Count > 0;
     }
     private static bool NeedsCoder(Workspace workspace, CompileResult compileResult)
     {
         return
-            workspace.CodingAgent_To_ProjectManagerAgent_Question != null ||
-            workspace.DebugAgent_To_CoderAgent_Question != null ||
-            workspace.DebugAgent_To_ProjectManagerAgent_Question != null ||
-            (
-                workspace.GetCurrentSubTask() != null &&
-                workspace.Flags.IsDebuggingFlag == false &&
-                compileResult.Errors.Count == 0 &&
-                workspace.CodingAgent_To_ProjectManagerAgent_Question == null &&
-                workspace.DebugAgent_To_ProjectManagerAgent_Question == null
-            );
+            workspace.GetCurrentSubTask() != null &&
+            workspace.Flags.IsDebuggingFlag == false &&
+            compileResult.Errors.Count == 0;
     }
     private static bool NeedsCodeReview(Workspace workspace)
     {
@@ -282,7 +217,8 @@ internal class Program : IDisposable
         {
             var history = new WorkspaceHistory()
             {
-                AgentName = agent.AgentName
+                AgentName = agent.AgentName,
+                DateTime = DateTime.Now
             };
             workspace.History.Add(history);
 

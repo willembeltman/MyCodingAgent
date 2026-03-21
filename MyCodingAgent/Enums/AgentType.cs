@@ -10,5 +10,6 @@ public enum AgentType
     Coder,
     Debugger,
     ProjectManager,
-    CodeReviewer
+    CodeReviewer,
+    Human
 }

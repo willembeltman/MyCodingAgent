@@ -11,22 +11,22 @@ public class Planner_Agent : BaseAgent, IAgent
     {
         WorkspaceTool = new WorkspaceReadonly_Tool(workspace);
         SubTasksTool = new SubTasks_Tool(workspace);
-        AskHumanDeveloperTool = new AskHumanDeveloper_Tool(workspace);
         WorkIsAlreadyDoneTool = new WorkIsAlreadyDone_Tool(workspace);
+        AskHumanDeveloperTool = new AskHumanDeveloper_Question_Tool(workspace, AgentType.Planner);
 
         Tools =
         [
             WorkspaceTool,
             SubTasksTool,
+            WorkIsAlreadyDoneTool,
             AskHumanDeveloperTool,
-            WorkIsAlreadyDoneTool
         ];
     }
 
-    public string AgentName => "ProjectManagerPlanner_Agent";
+    public AgentType AgentName => AgentType.Planner;
     public WorkspaceReadonly_Tool WorkspaceTool { get; }
     public SubTasks_Tool SubTasksTool { get; }
-    public AskHumanDeveloper_Tool AskHumanDeveloperTool { get; }
+    public AskHumanDeveloper_Question_Tool AskHumanDeveloperTool { get; }
     public WorkIsAlreadyDone_Tool WorkIsAlreadyDoneTool { get; }
 
     protected override List<ResponseResults> History => Workspace.PlanningHistory;
