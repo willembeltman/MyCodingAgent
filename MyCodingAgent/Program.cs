@@ -67,15 +67,6 @@ internal class Program : IDisposable
         Console.WriteLine($"Model '{model.Name}' initialized, initialising agents, please wait...");
         var team = new AgentTeam(Client, workspace, model);
 
-        //Console.WriteLine("Agents initialized, attempting to compile workspace, please wait...");
-        //var compileResult = await workspace.Compile();
-
-        //// Rerun for debug
-        //foreach (var resp in workspace.CodingHistory)
-        //    await codingAgent.ProcessResponse(resp.Prompt, resp.Response, false);
-        //foreach (var resp in workspace.DebugHistory.ToArray())
-        //    await debuggingAgent.ProcessResponse(resp.Prompt, resp.Response, false);
-
         Console.WriteLine("Project compile attempt finished, starting lllm-development-cycle, please wait...");
         await RunMainLoop(workspace, model, team);
     }
@@ -85,32 +76,32 @@ internal class Program : IDisposable
 
         while (!workspace.Flags.WorkIsDoneFlag)
         {
-            if (NeedsPlanner(workspace))
+            if (workspace.NeedsPlanner())
             {
                 // PLANNING MODE
                 await RunPlanningLoop(workspace, model, team);
                 continue;
             }
             var compileResult = await workspace.Compile();
-            if (HasInboxMessages(workspace))
+            if (workspace.HasInboxMessages())
             {
                 // MESSAGE BETWEEN AGENTS
                 await RunInboxLoop(workspace, model, team, compileResult);
                 continue;
             }
-            if (NeedsDebugging(workspace, compileResult))
+            if (workspace.NeedsDebugging(compileResult))
             {
                 // DEBUGGER MODE
                 await RunDebuggerLoop(workspace, model, team, compileResult);
                 continue;
             }
-            if (NeedsCoder(workspace, compileResult))
+            if (workspace.NeedsCoder(compileResult))
             {
                 // CODER MODE
                 await RunCoderLoop(workspace, model, team, compileResult);
                 continue;
             }
-            if (NeedsCodeReview(workspace))
+            if (workspace.NeedsCodeReview())
             {
                 // CODE REVIEW MODE
                 await RunCodeReviewLoop(workspace, model, team);
@@ -122,16 +113,15 @@ internal class Program : IDisposable
 
     private async Task RunPlanningLoop(Workspace workspace, Model model, AgentTeam team)
     {
-        while (NeedsPlanner(workspace))
+        while (workspace.NeedsPlanner())
         {
             await AgentFlow(workspace, model, team.Planner);
         }
         await workspace.Save();
-        Console.Clear();
     }
     private async Task RunInboxLoop(Workspace workspace, Model model, AgentTeam team, CompileResult compileResult)
     {
-        var message = workspace.InboxMessages.LastOrDefault() ?? 
+        var message = workspace.InboxMessages.LastOrDefault() ??
             throw new Exception("Er gaat iets mis in de flow, waarom wordt deze functie aangeroepen als er geen messages in de inbox staan.");
         if (!EmailableAgents.TryGetValue((message.From, message.To), out var emailableAgentGetter))
             throw new Exception("Er gaat iets mis in de flow, waarom wordt deze functie aangeroepen met een niet bekende from/to.");
@@ -141,73 +131,29 @@ internal class Program : IDisposable
         {
             await AgentFlow(workspace, model, emailableAgent);
         }
-        await workspace.Save();
     }
     private async Task RunDebuggerLoop(Workspace workspace, Model model, AgentTeam team, CompileResult compileResult)
     {
-        while (NeedsDebugging(workspace, compileResult))
+        while (workspace.NeedsDebugging(compileResult))
         {
             await AgentFlow(workspace, model, team.Debugger);
             compileResult = await workspace.Compile();
         }
-        await workspace.Save();
-        Console.Clear();
     }
     private async Task RunCoderLoop(Workspace workspace, Model model, AgentTeam team, CompileResult compileResult)
     {
-        while (NeedsCoder(workspace, compileResult))
+        while (workspace.NeedsCoder(compileResult))
         {
             await AgentFlow(workspace, model, team.Coder);
             compileResult = await workspace.Compile();
         }
-        await workspace.Save();
-        Console.Clear();
     }
     private async Task RunCodeReviewLoop(Workspace workspace, Model model, AgentTeam team)
     {
-        while (NeedsCodeReview(workspace))
+        while (workspace.NeedsCodeReview())
         {
             await AgentFlow(workspace, model, team.CodeReviewer);
         }
-        await workspace.Save();
-        Console.Clear();
-    }
-
-    private static bool NeedsPlanner(Workspace workspace)
-    {
-        return
-            workspace.SubTasks.Count == 0 ||
-            workspace.Flags.PlanningIsDoneFlag == false;
-    }
-    private static bool HasInboxMessages(Workspace workspace)
-    {
-        return workspace.InboxMessages.Count > 0;
-    }
-    private static bool NeedsDebugging(Workspace workspace, CompileResult compileResult)
-    {
-        return compileResult.Errors.Count > 0;
-    }
-    private static bool NeedsCoder(Workspace workspace, CompileResult compileResult)
-    {
-        return
-            workspace.GetCurrentSubTask() != null &&
-            workspace.Flags.IsDebuggingFlag == false &&
-            compileResult.Errors.Count == 0;
-    }
-    private static bool NeedsCodeReview(Workspace workspace)
-    {
-        if (workspace.Flags.IsCodeReviewingFlag)
-            return true;
-
-        if (workspace.Flags.PlanningIsDoneFlag &&
-            workspace.SubTasks.Count != 0 &&
-            workspace.SubTasks.Any(a => a.Finished == false) == false)
-        {
-            workspace.Flags.IsCodeReviewingFlag = true;
-            return true;
-        }
-
-        return false;
     }
 
     private async Task AgentFlow(Workspace workspace, Model model, IAgent agent)
@@ -215,48 +161,70 @@ internal class Program : IDisposable
         var hasToolCalls = false;
         while (!hasToolCalls)
         {
-            var history = new WorkspaceHistory()
+            var historyItem = new WorkspaceHistory()
             {
                 AgentName = agent.AgentName,
                 DateTime = DateTime.Now
             };
-            workspace.History.Add(history);
+            workspace.History.Add(historyItem);
+            hasToolCalls = await Run(workspace, model, agent, historyItem);
+        }
+    }
 
-            Console.Clear();
-            Console.WriteLine("\x1b[3J");
+    private async Task<bool> Run(Workspace workspace, Model model, IAgent agent, WorkspaceHistory historyItem)
+    {
+        var hasToolCalls = false;
+        Console.Clear();
+        Console.WriteLine("\x1b[3J");
 
-            history.ApiCall = await agent.GenerateApiCall();
+        if (historyItem.ApiCall == null)
+        {
+            historyItem.ApiCall = await agent.GenerateApiCall();
+            await workspace.Save();
+        }
+
+        foreach (var message in historyItem.ApiCall.Messages)
+            ShowMessage(message);
+        Console.WriteLine();
+
+        if (historyItem.Response == null)
+        {
+            historyItem.Response = await Client.ChatAsync(model, historyItem.ApiCall);
+        }
+
+        ShowMessage(historyItem.Response.message);
+        Console.WriteLine();
+
+        if (historyItem.ResponseResults == null)
+        {
+            historyItem.ResponseResults = await agent.ProcessResponse(historyItem.ApiCall, historyItem.Response);
+            hasToolCalls = historyItem.ResponseResults.ToolCallResults.Any(a => a.result.error == false);
             await workspace.Save();
 
-            foreach (var message in history.ApiCall.Messages)
-                ShowMessage(message);
-            Console.WriteLine();
-
-            //string requestJson = Client.CreateMessagesJson(apiCall.messages);
-            //Console.WriteLine(requestJson);
-
-            history.Response = await Client.ChatAsync(model, history.ApiCall);
-            ShowMessage(history.Response.message);
-            Console.WriteLine();
-
-            history.ResponseResults = await agent.ProcessResponse(history.ApiCall, history.Response);
-            hasToolCalls = history.ResponseResults.ToolCallResults.Any(a => a.result.error == false);
-
-            await workspace.Save();
-
-            if (workspace.Flags.NeedClearCodingHistoryFlag)
+            if (await PerformFlagActions(workspace))
             {
-                workspace.CodingHistory.Clear();
-                workspace.Flags.NeedClearCodingHistoryFlag = false;
-                await workspace.Save();
-            }
-            if (workspace.Flags.NeedClearDebugHistoryFlag)
-            {
-                workspace.DebugHistory.Clear();
-                workspace.Flags.NeedClearDebugHistoryFlag = false;
                 await workspace.Save();
             }
         }
+        
+        return hasToolCalls;
+    }
+    private async Task<bool> PerformFlagActions(Workspace workspace)
+    {
+        var response = false;
+        if (workspace.Flags.NeedClearCodingHistoryFlag)
+        {
+            workspace.CodingHistory.Clear();
+            workspace.Flags.NeedClearCodingHistoryFlag = false;
+            response = true;
+        }
+        if (workspace.Flags.NeedClearDebugHistoryFlag)
+        {
+            workspace.DebugHistory.Clear();
+            workspace.Flags.NeedClearDebugHistoryFlag = false;
+            response = true;
+        }
+        return response;
     }
 
     private static async Task<Workspace> CreateWorkspace(string workspaceDirectory)

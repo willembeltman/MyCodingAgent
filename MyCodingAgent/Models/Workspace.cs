@@ -125,6 +125,44 @@ public class Workspace
         if (!fullPath.StartsWith(currentDirectory.FullName + Path.DirectorySeparatorChar))
             throw new Exception($"LLM path escape detected: {path}");
     }
+    
+    public bool NeedsPlanner()
+    {
+        return
+            SubTasks.Count == 0 ||
+            Flags.PlanningIsDoneFlag == false;
+    }
+    public bool HasInboxMessages()
+    {
+        return InboxMessages.Count > 0;
+    }
+    public bool NeedsDebugging(CompileResult compileResult)
+    {
+        return compileResult.Errors.Count > 0;
+    }
+    public bool NeedsCoder(CompileResult compileResult)
+    {
+        return
+            GetCurrentSubTask() != null &&
+            Flags.IsDebuggingFlag == false &&
+            compileResult.Errors.Count == 0;
+    }
+    public bool NeedsCodeReview()
+    {
+        if (Flags.IsCodeReviewingFlag)
+            return true;
+
+        if (Flags.PlanningIsDoneFlag &&
+            SubTasks.Count != 0 &&
+            SubTasks.Any(a => a.Finished == false) == false)
+        {
+            Flags.IsCodeReviewingFlag = true;
+            return true;
+        }
+
+        return false;
+    }
+
     public async Task Save()
     {
         var llmFileString = Path.Combine(RootDirectoryName, "workspace.llm");

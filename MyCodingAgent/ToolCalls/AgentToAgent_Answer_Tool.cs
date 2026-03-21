@@ -40,6 +40,8 @@ public class AgentToAgent_Answer_Tool(
             .FirstOrDefault(a => a.tool_call.Id == Message.ToolCallId)
             ?? throw new Exception("Oh ooh..");
         coderToolCall.result.content = toolArguments.Content;
+
+        workspace.InboxMessages.Remove(Message);
         Message = null;
 
         return new ToolResult(
