@@ -59,14 +59,14 @@ public class SubTasks_Tool(Workspace workspace) : IToolCall
             var newSubTask = new WorkspaceSubTask(++id, toolArguments.Content);
             workspace.SubTasks.Add(newSubTask);
             return new ToolResult(
-                $"Created {toolArguments.Id}",
-                $"Created {toolArguments.Id}",
+                $"Created subtask {toolArguments.Id}:\r\n{toolArguments.Content}",
+                $"Created subtask {toolArguments.Id}",
                 false);
         }
         catch (Exception ex)
         {
             return new ToolResult(
-                $"Error while updating '{toolArguments.Id}': {ex.Message}",
+                $"Error while updating '{toolArguments.Id}': \r\n{toolArguments.Content}\r\n\r\nError: {ex.Message}",
                 $"Error while updating",
                 true);
         }
@@ -88,7 +88,7 @@ public class SubTasks_Tool(Workspace workspace) : IToolCall
         var subtask = workspace.GetSubTask(toolArguments.Id);
         if (subtask == null)
             return new ToolResult(
-                $"Error could not find subtask {toolArguments.Id}",
+                $"Error could not find subtask {toolArguments.Id}: {toolArguments.Content}",
                 $"Error could not find subtask",
                 true);
 
@@ -96,7 +96,7 @@ public class SubTasks_Tool(Workspace workspace) : IToolCall
         var newSubTask = new WorkspaceSubTask(subtask.Id, toolArguments.Content);
         workspace.SubTasks.Add(newSubTask);
         return new ToolResult(
-            $"Updated subtask '{toolArguments.Id}'",
+            $"Updated subtask '{toolArguments.Id}':\r\n{toolArguments.Content}",
             $"Updated subtask",
             false);
     }
@@ -121,14 +121,14 @@ public class SubTasks_Tool(Workspace workspace) : IToolCall
                     false);
             }
             return new ToolResult(
-                $"Error while deleting subtask '{toolArguments.Id}': could not find subtask",
+                $"Error while deleting subtask {toolArguments.Id}: could not find subtask",
                 $"Error while deleting subtask: could not find",
                 true);
         }
         catch (Exception ex)
         {
             return new ToolResult(
-                $"Error while deleting subtask '{toolArguments.Id}': {ex.Message}",
+                $"Error while deleting subtask {toolArguments.Id}: {ex.Message}",
                 $"Error while deleting subtask",
                 true);
         }

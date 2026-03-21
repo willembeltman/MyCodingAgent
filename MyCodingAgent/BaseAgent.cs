@@ -54,8 +54,8 @@ public abstract class BaseAgent(IClient Client, Workspace Workspace, Model model
                         toolCall.tool_call.Function.Arguments.Path,
                         toolCall.tool_call.Function.Arguments.NewPath,
                         toolCall.tool_call.Function.Arguments.Query,
-                        "", //toolCall.tool_call.function.arguments.content,
-                        "", //toolCall.tool_call.function.arguments.replaceText,
+                        toolCall.tool_call.Function.Arguments.Content,
+                        toolCall.tool_call.Function.Arguments.ReplaceText,
                         toolCall.tool_call.Function.Arguments.LineNumber);
                     if (!shownMessages.Add(cacheMessage)) // Todo, als het model ooit meerdere actions gaat uitvoeren
                     {

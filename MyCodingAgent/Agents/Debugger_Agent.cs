@@ -64,19 +64,28 @@ RULES
                 null),
         ];
 
+        var subTask = Workspace.GetCurrentSubTask();
+        var subTaskText = string.Empty;
+        if (subTask != null)
+        {
+            subTaskText = $@"--- CURRENT SUBTASK ---
+{subTask.Content}
+--- END OF SUBTASK ---
+
+";
+        }
+
         var currentSubTaskMessage = new Message(
             nameof(AgentRole.User).ToLower(),
             null,
-            $@"--- CURRENT COMPILATION RESULT ---
+            $@"{subTaskText}--- CURRENT COMPILATION RESULT ---
 {compileResult.Content}
 --- END OF COMPILATION RESULT ---
 Note: this is up-to-date.
 
 GOAL
 Make the code compile successfully.
-Do not change behavior unless required.
-
-If there are 0 errors in the compilation result, immediately call '{DebugAgentIsDoneTool.Name}' and do not make any changes.",
+Do not change behavior unless required.",
             null,
             null);
         messageList.Add(currentSubTaskMessage);

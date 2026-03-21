@@ -309,10 +309,10 @@ internal class Program : IDisposable
                 Console.ForegroundColor = ConsoleColor.White;
                 Console.WriteLine($"tool: {call.Function.Name.ToUpper()}");
 
+                Console.ForegroundColor = ConsoleColor.Red;
                 if (!string.IsNullOrWhiteSpace(call.Function.Arguments.Action))
                     Console.WriteLine($"action: {call.Function.Arguments.Action.ToUpper()}");
 
-                Console.ForegroundColor = ConsoleColor.Red;
                 if (!string.IsNullOrWhiteSpace(call.Function.Arguments.Id))
                     Console.WriteLine($"id: {call.Function.Arguments.Id}");
 
