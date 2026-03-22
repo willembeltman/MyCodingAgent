@@ -8,6 +8,5 @@ public class ToolCallFunctionArguments
     public string? NewPath { get; set; }
     public string? Query { get; set; }
     public string? Content { get; set; }
-    public string? ReplaceText { get; set; }
     public int? LineNumber { get; set; }
 }

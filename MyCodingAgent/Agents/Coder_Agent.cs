@@ -58,6 +58,7 @@ WORKFLOW
 RULES
 
 - The compiler expects a .csproj, .sln or .slnx file in the root of the workspace.
+- 1 class per file, preferably 1 function per file, refactor if needed.
 - When the code compiles successfully and the requested functionality is implemented,
   you can call the '{CurrentSubTaskIsFinishedTool.Name}' tool_call.
 - You must target .NET 10 (net10.0) for projects.",

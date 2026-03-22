@@ -1,6 +1,7 @@
 ﻿using MyCodingAgent.Models;
 using MyCodingAgent.Interfaces;
 using MyCodingAgent.EmailableAgents;
+using MyCodingAgent.Enums;
 
 namespace MyCodingAgent.Agents;
 
@@ -15,6 +16,7 @@ public class AgentTeam
     public ProjectManagerForCoding_Agent ProjectManagerForCoder { get; }
     public ProjectManagerForDebugger_Agent ProjectManagerForDebugger { get; }
     public IEmailableAgent[] EmailableAgents { get; }
+    public IAgent[] AllAgents { get; }
 
     public AgentTeam(IClient client, Workspace workspace, Model model)
     {
@@ -33,6 +35,13 @@ public class AgentTeam
             ProjectManagerForCoder,
             ProjectManagerForDebugger
         ];
-
+        AllAgents =
+        [
+            Planner,
+            Coder,
+            Debugger,
+            CodeReviewer,
+            ..EmailableAgents
+        ];
     }
 }

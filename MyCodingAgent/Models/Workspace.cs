@@ -138,7 +138,15 @@ public class Workspace
     }
     public bool NeedsDebugging(CompileResult compileResult)
     {
-        return compileResult.Errors.Count > 0;
+        if (Flags.IsDebuggingFlag)
+            return true;
+
+        if (compileResult.Errors.Count > 0)
+        {
+            Flags.IsDebuggingFlag = true;
+            return true;
+        }
+        return false;
     }
     public bool NeedsCoder(CompileResult compileResult)
     {

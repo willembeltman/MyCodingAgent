@@ -23,7 +23,7 @@ internal class Program : IDisposable
         Console.Clear();
 
         Console.ForegroundColor = ConsoleColor.White;
-        Console.WriteLine("MyCodingAgent v0.001, created by Willem-Jan Beltman");
+        Console.WriteLine("MyCodingAgent v0.002, created by Willem-Jan Beltman");
         Console.WriteLine();
 
         Console.ForegroundColor = ConsoleColor.DarkGray;
@@ -67,7 +67,18 @@ internal class Program : IDisposable
         Console.WriteLine($"Model '{model.Name}' initialized, initialising agents, please wait...");
         var team = new AgentTeam(Client, workspace, model);
 
-        Console.WriteLine("Project compile attempt finished, starting lllm-development-cycle, please wait...");
+        Console.WriteLine("Agents initialized, starting lllm-development-cycle, please wait...");
+
+        //var pendingHistoryItem = workspace.History.LastOrDefault();
+        //if (pendingHistoryItem != null &&  pendingHistoryItem.ResponseResults == null)
+        //{
+        //    var agent = team.AllAgents.FirstOrDefault(a => a.AgentName == pendingHistoryItem.AgentName);
+        //    if (agent != null)
+        //    {
+        //        await Run(workspace, model, agent, pendingHistoryItem);
+        //    }
+        //}
+
         await RunMainLoop(workspace, model, team);
     }
     private async Task RunMainLoop(Workspace workspace, Model model, AgentTeam team)
@@ -330,9 +341,6 @@ internal class Program : IDisposable
 
                 if (!string.IsNullOrWhiteSpace(call.Function.Arguments.Content))
                     Console.WriteLine($"content: {call.Function.Arguments.Content}");
-
-                if (!string.IsNullOrWhiteSpace(call.Function.Arguments.ReplaceText))
-                    Console.WriteLine($"replaceText: {call.Function.Arguments.ReplaceText}");
             }
         }
         Console.WriteLine();

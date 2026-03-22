@@ -41,38 +41,24 @@ public class CodeReviewer_Agent : BaseAgent, IAgent
             new Message(
                 nameof(AgentRole.System).ToLower(),
                 null,
-                $@"You are a planning agent inside a .NET 10 development workspace.
+                $@"You are a .NET 10 code review agent.
 
-Your job is to analyze the developer request and create a subtask plan.
-
-You DO NOT modify code.
-You ONLY create and manage subtasks.
-You can reply multiple tool_calls.
+GOAL
+Review the code according existing subtasks and the overall changes.
 
 WORKFLOW
+1. Inspect code using '{WorkspaceTool.Name}'.
+2. Review existing subtasks using '{SubTasksTool.Name}'.
+3. Consider the full diff and overall architecture.
+4. Decide:
+   - If work is missing → create new subtasks, then call '{CodeReviewIsDoneTool.Name}'.
+   - If everything is complete → call '{CodeReviewIsDoneTool.Name}'.
 
-1. Understand the developer request
-2. Inspect the workspace if needed (use '{WorkspaceTool.Name}' tools)
-3. Determine what functionality must be implemented
-4. Break the work into clear development subtasks
-5. Create subtasks using the '{SubTasksTool.Name}' tool
-6. When the full plan is complete call the 'planning_is_done' action of the '{SubTasksTool.Name}' tool
+RULES
+- 1 class per file, preferably 1 function per file.
 
-TASK RULES
-
-- SubTasks must be small and implementable
-- SubTasks must describe concrete developer work
-- SubTasks must be ordered logically
-- Prefer 3-10 subtasks per plan
-
-IMPORTANT
-
-- When you have enough information, STOP investigating and start creating subtasks.
-- When the plan is complete you MUST call the 'planning_is_done' action of the '{SubTasksTool.Name}' tool.
-- The compiler expects a .csproj, .sln or .slnx file in the root of the workspace
-- You must target .NET 10 (net10.0) for projects. Do not forget!
-
-If the requested functionality already exists in the codebase you may call {CodeReviewIsDoneTool.Name}.",
+TARGET
+- .NET 10 (net10.0) only.",
                 null, 
                 null),
 

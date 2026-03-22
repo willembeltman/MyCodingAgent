@@ -134,8 +134,7 @@ public class Ollama_Client(
                             LineNumber = a.function.arguments.lineNumber,
                             NewPath = a.function.arguments.newPath,
                             Path = a.function.arguments.path,
-                            Query = a.function.arguments.query,
-                            ReplaceText = a.function.arguments.replaceText,
+                            Query = a.function.arguments.query
                         })))
                 ]));
     }
@@ -181,7 +180,6 @@ public class Ollama_Client(
                                 newPath = b.Function.Arguments.NewPath,
                                 query = b.Function.Arguments.Query,
                                 content = b.Function.Arguments.Content,
-                                replaceText = b.Function.Arguments.ReplaceText,
                                 lineNumber = b.Function.Arguments.LineNumber
                             }
                         }

@@ -1,4 +1,5 @@
 ﻿using MyCodingAgent.Models;
+using System.Reflection.Metadata;
 using System.Text.RegularExpressions;
 
 namespace MyCodingAgent.ToolCalls;
@@ -159,12 +160,17 @@ public class Workspace_Tool(Workspace Workspace) : WorkspaceReadonly_Tool(Worksp
 
         try
         {
+            var originalContent = await file.GetFileContent();
             await file.UpdateContent(
                 toolArguments.LineNumber.Value,
                 -1,
                 toolArguments.Content);
+            var newContent = await file.GetFileContent();
+
+            var diff = GetDiffText(toolArguments, originalContent, newContent);
+
             return new ToolResult(
-                $"Appended file '{toolArguments.Path}': \r\n{toolArguments.Content}",
+                $"Appended file '{toolArguments.Path}': \r\n{diff}",
                 $"Appended file",
                 false);
         }
@@ -189,10 +195,10 @@ public class Workspace_Tool(Workspace Workspace) : WorkspaceReadonly_Tool(Worksp
                 "parameter query is not supplied",
                 "parameter query is not supplied",
                 true);
-        if (toolArguments.ReplaceText == null)
+        if (toolArguments.Content == null)
             return new ToolResult(
-                "parameter replaceText is not supplied",
-                "parameter replaceText is not supplied",
+                "parameter content is not supplied",
+                "parameter content is not supplied",
                 true);
 
         var file = Workspace.GetFile(toolArguments.Path);
@@ -202,18 +208,25 @@ public class Workspace_Tool(Workspace Workspace) : WorkspaceReadonly_Tool(Worksp
                 $"Error could not find path '{toolArguments.Path}'",
                 true);
 
-        var content = await file.GetFileContent();
-        var fileChanges = Regex.Count(content, Regex.Escape(toolArguments.Query));
-        content = content.Replace(toolArguments.Query, toolArguments.ReplaceText);
+        var originalContent = await file.GetFileContent();
+        var fileChanges = Regex.Count(originalContent, Regex.Escape(toolArguments.Query));
+        var newContent = originalContent.Replace(toolArguments.Query, toolArguments.Content);
 
         if (fileChanges > 0)
         {
-            await file.UpdateContent(content);
+            await file.UpdateContent(newContent);
+
+            var diff = GetDiffText(toolArguments, originalContent, newContent);
+
+            return new ToolResult(
+                $"Replaced {fileChanges} instances:\r\n{diff}",
+                $"Replaced {fileChanges} instances",
+                false);
         }
 
         return new ToolResult(
-            $"Replaced {fileChanges} instances",
-            $"Replaced {fileChanges} instances",
+            $"Replaced 0 instances",
+            $"Replaced 0 instances",
             false);
     }
     private async Task<ToolResult> Delete(ToolCall toolCall)

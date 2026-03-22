@@ -1,7 +1,9 @@
-﻿using MyCodingAgent.Interfaces;
+﻿using MyCodingAgent.Enums;
+using MyCodingAgent.Helpers;
+using MyCodingAgent.Interfaces;
 using MyCodingAgent.Models;
-using MyCodingAgent.Enums;
 using MyCodingAgent.ToolCalls;
+using System.Text.Json;
 
 namespace MyCodingAgent.Agents;
 
@@ -35,6 +37,8 @@ public class Debugger_Agent : BaseAgent, IAgent
     public async Task<ApiCall> GenerateApiCall()
     {
         var compileResult = await Workspace.Compile();
+        var compileResultText = string.Join("\r\n", compileResult.Errors.Take(3).Select(a => a.FullError));
+
         List <Message> messageList =
         [
             // SYSTEM MESSAGE
@@ -42,9 +46,6 @@ public class Debugger_Agent : BaseAgent, IAgent
                 nameof(AgentRole.System).ToLower(),
                 null,
                 $@"You are a .NET 10 repair agent.
-
-GOAL
-Fix compilation errors with minimal changes.
 
 WORKFLOW
 1. Analyze the error.
@@ -58,43 +59,38 @@ RULES
 - A .csproj, .sln, or .slnx must exist in the ROOT (no sub-directory search).
 - Always read a file before modifying it.
 - Do not overwrite entire files unless necessary.
-- Use '{WorkspaceTool.Name}' tool for ALL file operations.
+- 1 class per file, preferably 1 function per file, refactor if needed.
 - Target .NET 10 (net10.0) only.",
                 null,
                 null),
+
+            new Message(
+                nameof(AgentRole.User).ToLower(),
+                null,
+                $@"GOAL
+Fix compilation errors with minimal changes.
+Do not change behavior unless required.",
+                null,
+                null)
         ];
-
-        var subTask = Workspace.GetCurrentSubTask();
-        var subTaskText = string.Empty;
-        if (subTask != null)
-        {
-            subTaskText = $@"--- CURRENT SUBTASK ---
-{subTask.Content}
---- END OF SUBTASK ---
-
-";
-        }
 
         var currentSubTaskMessage = new Message(
             nameof(AgentRole.User).ToLower(),
             null,
-            $@"{subTaskText}--- CURRENT COMPILATION RESULT ---
-{compileResult.Content}
---- END OF COMPILATION RESULT ---
-Note: this is up-to-date.
-
-GOAL
-Make the code compile successfully.
-Do not change behavior unless required.",
+            $@"--- CURRENT COMPILATION RESULT ---
+{compileResultText}
+--- END OF COMPILATION RESULT ---",
             null,
             null);
-        messageList.Add(currentSubTaskMessage);
+        var currentSubTaskMessageJson = JsonSerializer.Serialize(currentSubTaskMessage, DefaultJsonSerializerOptions.JsonSerializeOptionsIndented);
 
         AddHistoryAndToolCalls(
             messageList,
             History,
             [.. Tools.Select(a => a.ToDto())],
-            additionalSizeInBytes: 0);
+            additionalSizeInBytes: currentSubTaskMessageJson.Length);
+
+        messageList.Add(currentSubTaskMessage);
 
         return new ApiCall(
             [.. messageList],

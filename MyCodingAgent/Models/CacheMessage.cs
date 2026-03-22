@@ -8,5 +8,4 @@ public record CacheMessage(
     string? NewPath,
     string? Query,
     string? Content,
-    string? ReplaceText,
     int? LineNumber);

@@ -55,7 +55,6 @@ public abstract class BaseAgent(IClient Client, Workspace Workspace, Model model
                         toolCall.tool_call.Function.Arguments.NewPath,
                         toolCall.tool_call.Function.Arguments.Query,
                         toolCall.tool_call.Function.Arguments.Content,
-                        toolCall.tool_call.Function.Arguments.ReplaceText,
                         toolCall.tool_call.Function.Arguments.LineNumber);
                     if (!shownMessages.Add(cacheMessage)) // Todo, als het model ooit meerdere actions gaat uitvoeren
                     {
@@ -76,14 +75,14 @@ public abstract class BaseAgent(IClient Client, Workspace Workspace, Model model
                 totalLength += messageJson.Length;
             }
 
-            if (totalLength < (Model.MaxTokenSize ?? 4096) * 5 / 2)
+            if (totalLength < (Model.MaxTokenSize ?? 4096) * 3)
                 maxLongDesciptionPrompt++;
             else
             {
                 useShortContent = true;
             }
 
-            if (totalLength < (Model.MaxTokenSize ?? 4096) * 7 / 2)
+            if (totalLength < (Model.MaxTokenSize ?? 4096) * 4)
                 maxHistory++;
             else
             {
