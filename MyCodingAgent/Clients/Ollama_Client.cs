@@ -41,6 +41,10 @@ public class Ollama_Client(
                 4096, //8192,
                 model.modified_at!));
         }
+        if (!models.Any(a => a.Name == "glm-4.7-flash:latest")) models.Add(new Model("glm-4.7-flash:latest", 0, 4096, DateTime.Now));
+        //if (!models.Any(a => a.Name == "gpt-oss-20b")) models.Add(new Model("gpt-oss-20b", 0, 4096, DateTime.Now));
+        if (!models.Any(a => a.Name == "llama3")) models.Add(new Model("llama3", 0, 4096, DateTime.Now));
+
         return [.. models];
     }
 
