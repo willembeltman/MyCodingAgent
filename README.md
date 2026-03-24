@@ -1,4 +1,4 @@
-![MyCodingAgent by Willem-Jan Beltman - Logo]mycodingagentbywillembeltman.png
+![MyCodingAgent by Willem-Jan Beltman - Logo](mycodingagentbywillembeltman.png)
 
 # 🚀 MyCodingAgent – .NET-first AI Development Engine
 
