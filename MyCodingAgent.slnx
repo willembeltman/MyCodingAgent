@@ -1,3 +1,4 @@
 <Solution>
+  <Project Path="MyCodingAgent.RAGTest/MyCodingAgent.RAGTest.csproj" Id="2c205078-a3c0-44e3-a310-a51a9b913278" />
   <Project Path="MyCodingAgent/MyCodingAgent.csproj" />
 </Solution>
