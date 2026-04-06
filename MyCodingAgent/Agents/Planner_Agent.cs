@@ -7,12 +7,12 @@ namespace MyCodingAgent.Agents;
 
 public class Planner_Agent : BaseAgent, IAgent
 {
-    public Planner_Agent(IClient client, Workspace workspace, Model model) : base(client, workspace, model)
+    public Planner_Agent(Current current) : base(current)
     {
-        WorkspaceTool = new WorkspaceReadonly_Tool(workspace);
-        SubTasksTool = new SubTasks_Tool(workspace);
-        WorkIsAlreadyDoneTool = new WorkIsAlreadyDone_Tool(workspace);
-        AskHumanDeveloperTool = new AskHumanDeveloper_Question_Tool(workspace, AgentType.Planner);
+        WorkspaceTool = new WorkspaceReadonly_Tool(current);
+        SubTasksTool = new SubTasks_Tool(current);
+        WorkIsAlreadyDoneTool = new WorkIsAlreadyDone_Tool(current);
+        AskHumanDeveloperTool = new AskHumanDeveloper_Question_Tool(current, Actor.Planner);
 
         Tools =
         [
@@ -23,16 +23,19 @@ public class Planner_Agent : BaseAgent, IAgent
         ];
     }
 
-    public AgentType AgentName => AgentType.Planner;
-    public WorkspaceReadonly_Tool WorkspaceTool { get; }
-    public SubTasks_Tool SubTasksTool { get; }
-    public AskHumanDeveloper_Question_Tool AskHumanDeveloperTool { get; }
-    public WorkIsAlreadyDone_Tool WorkIsAlreadyDoneTool { get; }
+    private WorkspaceReadonly_Tool WorkspaceTool { get; }
+    private SubTasks_Tool SubTasksTool { get; }
+    private AskHumanDeveloper_Question_Tool AskHumanDeveloperTool { get; }
+    private WorkIsAlreadyDone_Tool WorkIsAlreadyDoneTool { get; }
 
-    protected override List<ResponseResults> History => Workspace.PlanningHistory;
+    public virtual Actor AgentName => Actor.Planner;
+    protected override IEnumerable<WorkspaceEvent> History
+        => CurrentTask
+            .GetEvents(CurrentWorkspace)
+            .Where(a => a.Conversation == Conversation.System || a.Conversation == Conversation.Planning);
     protected override IToolCall[] Tools { get; }
 
-    public async Task<ApiCall> GenerateApiCall()
+    public virtual async Task<LlmRequest> GenerateRequest(CompileResult result)
     {
         List<Message> messageList = 
         [
@@ -80,21 +83,20 @@ If the requested functionality already exists in the codebase you may call {Work
                 nameof(AgentRole.User).ToLower(),
                 null,
                 $@"--- DEVELOPER REQUEST ---
-{Workspace.UserPrompt}
+{CurrentTask.UserPrompt}
 --- END OF DEVELOPER REQUEST ---",
                 null, 
                 null),
         ];
-
+        var tools = Tools.Select(a => a.ToDto()).ToArray();
         // CHAT HISTORY
-        AddHistoryAndToolCalls(
+        AddHistoryToMessageList(
             messageList, 
-            History, 
-            [ ..Tools.Select(a => a.ToDto())],
+            tools,
             additionalSizeInBytes: 0);
 
-        return new ApiCall(
+        return new LlmRequest(
             [.. messageList],
-            [.. Tools.Select(a => a.ToDto())]);
+            tools);
     }
 }

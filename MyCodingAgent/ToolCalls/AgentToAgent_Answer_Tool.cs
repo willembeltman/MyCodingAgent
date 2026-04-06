@@ -3,8 +3,7 @@ using MyCodingAgent.Models;
 
 namespace MyCodingAgent.ToolCalls;
 
-public class AgentToAgent_Answer_Tool(
-    Workspace workspace,
+public class AgentToAgent_Answer_Tool(Current current,
     string name,
     string description,
     string contentParameterDescription)

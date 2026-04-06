@@ -41,10 +41,6 @@ public class Ollama_Client(
                 4096, //8192,
                 model.modified_at!));
         }
-        if (!models.Any(a => a.Name == "glm-4.7-flash:latest")) models.Add(new Model("glm-4.7-flash:latest", 0, 4096, DateTime.Now));
-        //if (!models.Any(a => a.Name == "gpt-oss-20b")) models.Add(new Model("gpt-oss-20b", 0, 4096, DateTime.Now));
-        if (!models.Any(a => a.Name == "llama3")) models.Add(new Model("llama3", 0, 4096, DateTime.Now));
-
         return [.. models];
     }
 
@@ -107,7 +103,7 @@ public class Ollama_Client(
 
         return agentTranslation;
     }
-    public async Task<Response> ChatAsync(Model model, ApiCall apiCall, CancellationToken ct = default)
+    public async Task<LlmResponse> ChatAsync(Model model, LlmRequest apiCall, CancellationToken ct = default)
     {
         string payload = CreateRequestJson(model, apiCall);
 
@@ -117,7 +113,7 @@ public class Ollama_Client(
             JsonSerializer.Deserialize<OllamaResponse>(reponseJson)
             ?? throw new Exception("Something is not right");
 
-        return new Response(
+        return new LlmResponse(
             response.model,
             response.created_at,
             new Message(
@@ -214,7 +210,7 @@ public class Ollama_Client(
     }}
   }}"));
     }
-    public string CreateRequestJson(Model model, ApiCall apiCall)
+    public string CreateRequestJson(Model model, LlmRequest apiCall)
     {
         return $@"{{
   ""model"": ""{model.Name}"",

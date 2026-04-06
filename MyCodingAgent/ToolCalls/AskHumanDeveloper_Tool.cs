@@ -4,9 +4,8 @@ using MyCodingAgent.Models;
 
 namespace MyCodingAgent.ToolCalls;
 
-public class AskHumanDeveloper_Question_Tool(
-    Workspace workspace,
-    AgentType agent)
+public class AskHumanDeveloper_Question_Tool(Current current,
+    Actor agent)
      : IToolCall
 {
     public string Name
@@ -32,7 +31,7 @@ public class AskHumanDeveloper_Question_Tool(
             throw new Exception("eeeuhm..");
 
         workspace.InboxMessages.Add(
-            new(toolCall.Id, agent, AgentType.Human, toolArguments.Content));
+            new(toolCall.Id, agent, Actor.Human, toolArguments.Content));
 
         var answer = "Waiting for answer..";
         return new ToolResult(

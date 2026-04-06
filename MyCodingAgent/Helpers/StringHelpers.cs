@@ -36,4 +36,9 @@ public static class StringHelpers
         }
         return sb.ToString();
     }
+
+    public static string FileNameParse(string content)
+    {
+        throw new NotImplementedException();
+    }
 }

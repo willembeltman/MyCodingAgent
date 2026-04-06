@@ -1,5 +1,5 @@
 ﻿namespace MyCodingAgent.Models;
 
-public record ApiCall(
+public record LlmRequest(
     Message[] Messages,
     Tool[] Tools);

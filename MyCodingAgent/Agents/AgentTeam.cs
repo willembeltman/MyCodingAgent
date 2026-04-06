@@ -1,5 +1,4 @@
-﻿using MyCodingAgent.Models;
-using MyCodingAgent.Interfaces;
+﻿using MyCodingAgent.Interfaces;
 using MyCodingAgent.EmailableAgents;
 using MyCodingAgent.Enums;
 
@@ -18,16 +17,16 @@ public class AgentTeam
     public IEmailableAgent[] EmailableAgents { get; }
     public IAgent[] AllAgents { get; }
 
-    public AgentTeam(IClient client, Workspace workspace, Model model)
+    public AgentTeam(Current current)
     {
-        Planner = new Planner_Agent(client, workspace, model);
-        Coder = new Coder_Agent(client, workspace, model);
-        Debugger = new Debugger_Agent(client, workspace, model);
-        CodeReviewer = new CodeReviewer_Agent(client, workspace, model);
+        Planner = new Planner_Agent(current);
+        Coder = new Coder_Agent(current);
+        Debugger = new Debugger_Agent(current);
+        CodeReviewer = new CodeReviewer_Agent(current);
 
-        CoderForDebugger = new CoderForDebugger_Agent(client, workspace, model);
-        ProjectManagerForCoder = new ProjectManagerForCoding_Agent(client, workspace, model);
-        ProjectManagerForDebugger = new ProjectManagerForDebugger_Agent(client, workspace, model);
+        CoderForDebugger = new CoderForDebugger_Agent(current);
+        ProjectManagerForCoder = new ProjectManagerForCoding_Agent(current);
+        ProjectManagerForDebugger = new ProjectManagerForDebugger_Agent(current);
 
         EmailableAgents =
         [

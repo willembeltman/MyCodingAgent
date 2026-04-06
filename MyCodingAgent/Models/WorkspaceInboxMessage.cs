@@ -4,6 +4,6 @@ namespace MyCodingAgent.Models;
 
 public record WorkspaceInboxMessage(
     string ToolCallId,
-    AgentType From,
-    AgentType To,
+    Actor From,
+    Actor To,
     string Question);

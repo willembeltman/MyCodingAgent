@@ -3,7 +3,7 @@ using MyCodingAgent.Models;
 
 namespace MyCodingAgent.ToolCalls;
 
-public class CodeReviewIsDone_Tool(Workspace workspace) : IToolCall
+public class CodeReviewIsDone_Tool(Current current) : IToolCall
 {
     public string Name
         => "codereview_is_done";
@@ -13,9 +13,9 @@ public class CodeReviewIsDone_Tool(Workspace workspace) : IToolCall
     public async Task<ToolResult> Invoke(ToolCall toolCall)
     {
         workspace.Flags.IsCodeReviewingFlag = false;
-        workspace.Flags.WorkIsDoneFlag = !workspace.SubTasks.Any(a => a.Finished == false);
+        workspace.Flags.TaskIsDoneFlag = !workspace.SubTasks.Any(a => a.Finished == false);
         await workspace.Save();
-        if (workspace.Flags.WorkIsDoneFlag)
+        if (workspace.Flags.TaskIsDoneFlag)
         {
             return new ToolResult("Code review approved", "Code review approved", false);
         }

@@ -4,19 +4,20 @@ using MyCodingAgent.Enums;
 using MyCodingAgent.Helpers;
 using MyCodingAgent.ToolCalls;
 using System.Text.Json;
+using MyCodingAgent.Agents;
 
 namespace MyCodingAgent.EmailableAgents;
 
-public class ProjectManagerForCoding_Agent : BaseAgent, IEmailableAgent
+public class ProjectManagerForCoding_Agent : Planner_Agent, IEmailableAgent
 {
-    public ProjectManagerForCoding_Agent(IClient client, Workspace workspace, Model model) : base(client, workspace, model)
+    public ProjectManagerForCoding_Agent(Current current) : base(current)
     {
-        AnswerCoderAgentTool = new AgentToAgent_Answer_Tool(workspace,
+        AnswerCoderAgentTool = new AgentToAgent_Answer_Tool(current,
             "answer_coder_question",
             "Provide the official response or missing technical details to a Coding Agents question",
             "The detailed answer or instruction that will be sent back to the coding agent");
-        SubTasksTool = new SubTasks_Tool(workspace);
-        WorkspaceReadonlyTool = new WorkspaceReadonly_Tool(workspace);
+        SubTasksTool = new SubTasks_Tool(current);
+        WorkspaceReadonlyTool = new WorkspaceReadonly_Tool(current);
 
         Tools =
         [
@@ -26,18 +27,17 @@ public class ProjectManagerForCoding_Agent : BaseAgent, IEmailableAgent
         ];
     }
 
-    public AgentType AgentName => AgentType.ProjectManager;
-    public AgentType[] AcceptsFrom_AgentName => [ AgentType.Coder ];
-    protected override List<ResponseResults> History => Workspace.PlanningHistory;
+    private AgentToAgent_Answer_Tool AnswerCoderAgentTool { get; }
+    private SubTasks_Tool SubTasksTool { get; }
+    private WorkspaceReadonly_Tool WorkspaceReadonlyTool { get; }
 
-    public AgentToAgent_Answer_Tool AnswerCoderAgentTool { get; }
-    public SubTasks_Tool SubTasksTool { get; }
-    public WorkspaceReadonly_Tool WorkspaceReadonlyTool { get; }
+    public override Actor AgentName => Actor.ProjectManager;
+    public Actor[] AcceptsFrom_AgentName => [ Actor.Coder ];
     protected override IToolCall[] Tools { get; }
 
     public void SetCurrentMessage(WorkspaceInboxMessage? message)
         => AnswerCoderAgentTool.SetCurrentMessage(message);
-    public async Task<ApiCall> GenerateApiCall()
+    public override async Task<LlmRequest> GenerateRequest(CompileResult compileResult)
     {
         var message = AnswerCoderAgentTool.Message;
         if (message == null)
@@ -75,7 +75,7 @@ When you have the answer, you MUST call '{AnswerCoderAgentTool.Name}'.",
             new Message(
                 nameof(AgentRole.User).ToLower(),
                 null,
-                $"Original Project Goal: {Workspace.UserPrompt}",
+                $"Original Project Goal: {CurrentTask.UserPrompt}",
                 null,
                 null),
         ];
@@ -85,7 +85,7 @@ When you have the answer, you MUST call '{AnswerCoderAgentTool.Name}'.",
 {message.Question}
 
 ### CONTEXT: CURRENT SUBTASK DEFINITION
-{Workspace.GetCurrentSubTask()?.Content}
+{CurrentSubTask?.Content}
 
 ### GUIDANCE
 Please analyze the request above against the subtask definition and provide the necessary information to unblock the Coder.";
@@ -98,19 +98,18 @@ Please analyze the request above against the subtask definition and provide the 
             null);
 
         var questionJson = JsonSerializer.Serialize(question, DefaultJsonSerializerOptions.JsonSerializeOptionsIndented);
-
+        var tools = Tools.Select(a => a.ToDto()).ToArray();
         // CHAT HISTORY (Hier zit je create_subtask historie in)
-        AddHistoryAndToolCalls(
+        AddHistoryToMessageList(
             messageList,
-            History,
-            [.. Tools.Select(a => a.ToDto())],
+            tools,
             additionalSizeInBytes: questionJson.Length);
 
         // Voeg de actuele vraag als laatste toe zodat deze de meeste prioriteit heeft
         messageList.Add(question);
 
-        return new ApiCall(
+        return new LlmRequest(
             [.. messageList],
-            [.. Tools.Select(a => a.ToDto())]);
+            tools);
     }
 }

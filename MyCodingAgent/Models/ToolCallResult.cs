@@ -3,5 +3,5 @@
 namespace MyCodingAgent.Models;
 
 public record ToolCallResult(
-    ToolCall tool_call,
-    ToolResult result);
+    ToolCall ToolCall,
+    ToolResult Result);

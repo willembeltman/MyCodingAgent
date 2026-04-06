@@ -9,11 +9,11 @@ namespace MyCodingAgent.Agents;
 
 public class Debugger_Agent : BaseAgent, IAgent
 {
-    public Debugger_Agent(IClient client, Workspace workspace, Model model) : base(client, workspace, model)
+    public Debugger_Agent(Current current) : base(current)
     {
-        WorkspaceTool = new Workspace_Tool(workspace);
-        DebugAgentIsDoneTool = new DebuggingIsDone_Tool(workspace);
-        AskCoderAgentTool = new AgentToAgent_Question_Tool(workspace, AgentType.Debugger, AgentType.Coder,
+        WorkspaceTool = new Workspace_Tool(current);
+        DebugAgentIsDoneTool = new DebuggingIsDone_Tool(current);
+        AskCoderAgentTool = new AgentToAgent_Question_Tool(current, Actor.Debugger, Actor.Coder,
             "ask_coder_agent",
             "Ask the coder agent for clarification or missing details",
             "Question or missing information");
@@ -26,17 +26,20 @@ public class Debugger_Agent : BaseAgent, IAgent
         ];
     }
 
-    public AgentType AgentName => AgentType.Debugger;
+    public Actor AgentName => Actor.Debugger;
     public Workspace_Tool WorkspaceTool { get; }
     public DebuggingIsDone_Tool DebugAgentIsDoneTool { get; }
     public AgentToAgent_Question_Tool AskCoderAgentTool { get; }
 
-    protected override List<ResponseResults> History => Workspace.DebugHistory;
+    protected override IEnumerable<WorkspaceEvent> History
+        => CurrentSubTask?
+            .GetEvents(CurrentWorkspace)
+            .Where(a => a.Conversation == Conversation.System || a.Conversation == Conversation.Debugging)
+            ?? [];
     protected override IToolCall[] Tools { get; }
 
-    public async Task<ApiCall> GenerateApiCall()
+    public async Task<LlmRequest> GenerateRequest(CompileResult compileResult)
     {
-        var compileResult = await Workspace.Compile();
         var compileResultText = string.Join("\r\n", compileResult.Errors.Take(3).Select(a => a.FullError));
 
         List <Message> messageList =
@@ -50,18 +53,17 @@ public class Debugger_Agent : BaseAgent, IAgent
 WORKFLOW
 1. Analyze the error.
 2. Find the root cause.
-3. Apply the smallest possible fix.
-4. Repeat until it compiles.
-5. Call '{DebugAgentIsDoneTool.Name}' tool when done. DO NOT FORGET!
+3. Read relevant files using '{WorkspaceTool.Name}' tool.
+4. Apply the smallest possible fix.
+5. Repeat until it compiles.
+6. Call '{DebugAgentIsDoneTool.Name}' tool when done. DO NOT FORGET!
 
 RULES
 - A .csproj, .sln, or .slnx must exist in the ROOT (no sub-directory search).
 - Always read a file before modifying it.
 - Do not overwrite entire files unless necessary.
 - 1 class per file, preferably 1 function per file, refactor if needed.
-- Target .NET 10 (net10.0) only.
-- Important: When using 'text_search_and_replace' action on '{WorkspaceTool.Name}' tool, change 1 row at a time!
-- If there are many errors, please just start fixing 1 at a time",
+- Target .NET 10 (net10.0) only.",
                 null,
                 null),
 
@@ -84,17 +86,16 @@ Do not change behavior unless required.",
             null,
             null);
         var currentSubTaskMessageJson = JsonSerializer.Serialize(currentSubTaskMessage, DefaultJsonSerializerOptions.JsonSerializeOptionsIndented);
-
-        AddHistoryAndToolCalls(
+        var requestTools = Tools.Select(a => a.ToDto()).ToArray();
+        AddHistoryToMessageList(
             messageList,
-            History,
-            [.. Tools.Select(a => a.ToDto())],
+            requestTools,
             additionalSizeInBytes: currentSubTaskMessageJson.Length);
 
         messageList.Add(currentSubTaskMessage);
 
-        return new ApiCall(
+        return new LlmRequest(
             [.. messageList],
-            [.. Tools.Select(a => a.ToDto())]);
+            requestTools);
     }
 }

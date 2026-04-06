@@ -3,7 +3,7 @@ using MyCodingAgent.Models;
 
 namespace MyCodingAgent.ToolCalls;
 
-public class SubTaskIsFinished_Tool(Workspace workspace) : IToolCall
+public class SubTaskIsFinished_Tool(Current current) : IToolCall
 {
     public string Name
         => "subtask_is_done";

@@ -1,6 +1,5 @@
-﻿namespace MyCodingAgent.Models;
+﻿//namespace MyCodingAgent.Models;
 
-public record WorkspaceOriginalFile(
-    string RelativePath,
-    string FullPath,
-    string Content);
+//public record WorkspaceOriginalFile(
+//    string RelativePath,
+//    string Content);

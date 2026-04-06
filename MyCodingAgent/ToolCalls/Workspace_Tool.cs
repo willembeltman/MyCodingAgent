@@ -1,10 +1,9 @@
 ﻿using MyCodingAgent.Models;
-using System.Reflection.Metadata;
 using System.Text.RegularExpressions;
 
 namespace MyCodingAgent.ToolCalls;
 
-public class Workspace_Tool(Workspace Workspace) : WorkspaceReadonly_Tool(Workspace)
+public class Workspace_Tool(Current Current) : WorkspaceReadonly_Tool(Current)
 {
     public override string Name => "workspace";
     public override string Description => "Interact with the workspace";
@@ -57,7 +56,7 @@ public class Workspace_Tool(Workspace Workspace) : WorkspaceReadonly_Tool(Worksp
             "delete" => await Delete(toolCall),
             "remove" => await Delete(toolCall),
             "move" => await Move(toolCall),
-            "replace" => await TextSearchAndReplace(toolCall),
+            "replace" => await Replace(toolCall),
             "insert" => await Append(toolCall),
             "file_create" => await Write(toolCall),
             "file_open" => await Read(toolCall),
@@ -68,9 +67,9 @@ public class Workspace_Tool(Workspace Workspace) : WorkspaceReadonly_Tool(Worksp
             "file_remove" => await Delete(toolCall),
             "file_move" => await Move(toolCall),
             "text_search" => await TextSearch(toolCall),
-            "text_replace" => await TextSearchAndReplace(toolCall),
+            "text_replace" => await Replace(toolCall),
             "text_insert" => await Append(toolCall),
-            "text_search_and_replace" => await TextSearchAndReplace(toolCall),
+            "text_search_and_replace" => await Replace(toolCall),
             "compile" => await Compile(toolCall),
             "diff" => await Diff(toolCall),
             "diff_with_original" => await Diff(toolCall),
@@ -95,16 +94,16 @@ public class Workspace_Tool(Workspace Workspace) : WorkspaceReadonly_Tool(Worksp
                 "Error parameter content is not supplied",
                 true);
 
-        Workspace.GaurdParseFullPath(toolArguments.Path, out var fullPath);
+        Models.WorkspaceTask.GaurdParseFullPath(toolArguments.Path, out var fullPath);
 
         try
         {
-            var file = Workspace.GetFile(toolArguments.Path);
+            var file = WorkspaceTask.GetFile(toolArguments.Path);
             if (file == null)
             {
                 var newFile = new WorkspaceFile(toolArguments.Path, fullPath);
                 await newFile.UpdateContent(toolArguments.Content);
-                Workspace.Files.Add(newFile);
+                WorkspaceTask.Files.Add(newFile);
                 return new ToolResult(
                     $"Created {toolArguments.Path}:\r\n{toolArguments.Content}",
                     $"Created {toolArguments.Path}",
@@ -112,7 +111,7 @@ public class Workspace_Tool(Workspace Workspace) : WorkspaceReadonly_Tool(Worksp
             }
             else
             {
-                var originalFile = Workspace.GetOriginalFile(toolArguments.Path);
+                var originalFile = WorkspaceTask.GetOriginalFile(toolArguments.Path);
                 var oldContent = originalFile?.Content ?? string.Empty;
                 var newContent = await file.GetFileContent() ?? string.Empty;
                 var sb = GetDiffText(toolArguments, oldContent, newContent);
@@ -151,7 +150,7 @@ public class Workspace_Tool(Workspace Workspace) : WorkspaceReadonly_Tool(Worksp
                 "parameter content is not supplied.",
                 true);
 
-        var file = Workspace.GetFile(toolArguments.Path);
+        var file = WorkspaceTask.GetFile(toolArguments.Path);
         if (file == null)
             return new ToolResult(
                 $"Error could not find file '{toolArguments.Path}'",
@@ -182,7 +181,7 @@ public class Workspace_Tool(Workspace Workspace) : WorkspaceReadonly_Tool(Worksp
                 true);
         }
     }
-    private async Task<ToolResult> TextSearchAndReplace(ToolCall toolCall)
+    private async Task<ToolResult> Replace(ToolCall toolCall)
     {
         var toolArguments = toolCall.Function.Arguments;
         if (toolArguments.Path == null)
@@ -201,7 +200,7 @@ public class Workspace_Tool(Workspace Workspace) : WorkspaceReadonly_Tool(Worksp
                 "parameter content is not supplied",
                 true);
 
-        var file = Workspace.GetFile(toolArguments.Path);
+        var file = WorkspaceTask.GetFile(toolArguments.Path);
         if (file == null)
             return new ToolResult(
                 $"Error could not find path '{toolArguments.Path}'",
@@ -238,15 +237,15 @@ public class Workspace_Tool(Workspace Workspace) : WorkspaceReadonly_Tool(Worksp
                 "Error parameter path is not supplied",
                 true);
 
-        Workspace.GaurdParseFullPath(toolArguments.Path, out var _);
+        WorkspaceTask.GaurdParseFullPath(toolArguments.Path, out var _);
 
         try
         {
-            var file = Workspace.GetFile(toolArguments.Path);
+            var file = WorkspaceTask.GetFile(toolArguments.Path);
             if (file != null)
             {
                 file.Delete();
-                Workspace.Files.Remove(file);
+                WorkspaceTask.Files.Remove(file);
                 return new ToolResult(
                     $"Deleted file {toolArguments.Path}",
                     $"Deleted file",
@@ -279,11 +278,11 @@ public class Workspace_Tool(Workspace Workspace) : WorkspaceReadonly_Tool(Worksp
                 "Error parameter newPath is not supplied",
                 true);
 
-        Workspace.GaurdParseFullPath(toolArguments.NewPath, out var newFullPath);
+        WorkspaceTask.GaurdParseFullPath(toolArguments.NewPath, out var newFullPath);
 
         try
         {
-            var file = Workspace.GetFile(toolArguments.Path);
+            var file = WorkspaceTask.GetFile(toolArguments.Path);
             if (file != null && file.Exists())
             {
                 file.Move(toolArguments.NewPath, newFullPath);

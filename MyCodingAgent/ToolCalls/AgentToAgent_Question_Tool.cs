@@ -4,10 +4,9 @@ using MyCodingAgent.Enums;
 
 namespace MyCodingAgent.ToolCalls;
 
-public class AgentToAgent_Question_Tool(
-    Workspace workspace,
-    AgentType from,
-    AgentType to,
+public class AgentToAgent_Question_Tool(Current current,
+    Actor from,
+    Actor to,
     string name,
     string description,
     string contentParameterDescription) 

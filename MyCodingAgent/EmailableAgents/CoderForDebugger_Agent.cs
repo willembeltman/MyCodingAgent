@@ -4,15 +4,16 @@ using MyCodingAgent.Enums;
 using MyCodingAgent.Helpers;
 using MyCodingAgent.ToolCalls;
 using System.Text.Json;
+using MyCodingAgent.Agents;
 
 namespace MyCodingAgent.EmailableAgents;
 
-public class CoderForDebugger_Agent : BaseAgent, IEmailableAgent
+public class CoderForDebugger_Agent : Coder_Agent, IEmailableAgent
 {
-    public CoderForDebugger_Agent(IClient client, Workspace workspace, Model model) : base(client, workspace, model)
+    public CoderForDebugger_Agent(Current current) : base(current)
     {
-        WorkspaceTool = new WorkspaceReadonly_Tool(workspace);
-        AnswerDebugAgentTool = new AgentToAgent_Answer_Tool(workspace,
+        WorkspaceTool = new WorkspaceReadonly_Tool(current);
+        AnswerDebugAgentTool = new AgentToAgent_Answer_Tool(current,
             "answer_debug_question",
             "Provide the official response or missing technical details to a Debug Agent question",
             "The detailed answer or instruction that will be sent back to the coding agent");
@@ -24,18 +25,16 @@ public class CoderForDebugger_Agent : BaseAgent, IEmailableAgent
         ];
     }
 
-    public AgentType AgentName => AgentType.Coder;
-    public AgentType[] AcceptsFrom_AgentName => [ AgentType.Debugger ];
-    protected override List<ResponseResults> History => Workspace.PlanningHistory;
-
-    public WorkspaceReadonly_Tool WorkspaceTool { get; }
-    public AgentToAgent_Answer_Tool AnswerDebugAgentTool { get; }
-    protected override IToolCall[] Tools { get; }
+    private WorkspaceReadonly_Tool WorkspaceTool { get; }
+    private AgentToAgent_Answer_Tool AnswerDebugAgentTool { get; }
     private WorkspaceInboxMessage? Message { get; set; }
+
+    public Actor[] AcceptsFrom_AgentName => [ Actor.Debugger ];
+    protected override IToolCall[] Tools { get; }
 
     public void SetCurrentMessage(WorkspaceInboxMessage? message)
         => AnswerDebugAgentTool.SetCurrentMessage(message);
-    public async Task<ApiCall> GenerateApiCall()
+    public override async Task<LlmRequest> GenerateRequest(CompileResult compileResult)
     {
         var message = AnswerDebugAgentTool.Message;
         if (Message == null)
@@ -68,7 +67,7 @@ When you have the answer, you MUST call '{AnswerDebugAgentTool.Name}'.",
             new Message(
                 nameof(AgentRole.User).ToLower(),
                 null,
-                $"Original Project Goal: {Workspace.UserPrompt}",
+                $"Original Project Goal: {CurrentTask.UserPrompt}",
                 null,
                 null),
         ];
@@ -78,7 +77,7 @@ When you have the answer, you MUST call '{AnswerDebugAgentTool.Name}'.",
 {Message.Question}
 
 ### CONTEXT: CURRENT SUBTASK DEFINITION
-{Workspace.GetCurrentSubTask()?.Content}
+{CurrentSubTask?.Content}
 
 ### GUIDANCE
 Please analyze the request above against the subtask definition and provide the necessary information to unblock the Debug Agent.";
@@ -91,20 +90,19 @@ Please analyze the request above against the subtask definition and provide the 
             null);
 
         var questionJson = JsonSerializer.Serialize(question, DefaultJsonSerializerOptions.JsonSerializeOptionsIndented);
-
+        var tools = Tools.Select(a => a.ToDto()).ToArray();
         // CHAT HISTORY (Hier zit je create_subtask historie in)
-        AddHistoryAndToolCalls(
+        AddHistoryToMessageList(
             messageList,
-            History,
-            [.. Tools.Select(a => a.ToDto())],
+            tools,
             additionalSizeInBytes: questionJson.Length);
 
         // Voeg de actuele vraag als laatste toe zodat deze de meeste prioriteit heeft
         messageList.Add(question);
 
-        return new ApiCall(
+        return new LlmRequest(
             [.. messageList],
-            [.. Tools.Select(a => a.ToDto())]);
+            tools);
     }
 
 }

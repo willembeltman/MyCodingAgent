@@ -3,7 +3,7 @@ using MyCodingAgent.Models;
 
 namespace MyCodingAgent.ToolCalls;
 
-public class DebuggingIsDone_Tool(Workspace workspace) : IToolCall
+public class DebuggingIsDone_Tool(Current current) : IToolCall
 {
     public string Name
         => "debug_is_done";

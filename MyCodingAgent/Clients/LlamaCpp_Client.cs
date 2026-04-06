@@ -73,7 +73,7 @@ public class LlamaCpp_Client : IDisposable, IClient
         return translated;
     }
 
-    public async Task<Response> ChatAsync(Model model, ApiCall apiCall, CancellationToken ct = default)
+    public async Task<LlmResponse> ChatAsync(Model model, LlmRequest apiCall, CancellationToken ct = default)
     {
         var payload = new
         {
@@ -131,7 +131,7 @@ public class LlamaCpp_Client : IDisposable, IClient
             )).ToArray();
         }
 
-        return new Response(
+        return new LlmResponse(
             model.Name,
             DateTime.UtcNow,
             new Message(
@@ -174,7 +174,7 @@ public class LlamaCpp_Client : IDisposable, IClient
         return JsonSerializer.Serialize(tools, DefaultJsonSerializerOptions.JsonSerializeOptionsIndented);
     }
 
-    public string CreateRequestJson(Model model, ApiCall apiCall)
+    public string CreateRequestJson(Model model, LlmRequest apiCall)
     {
         var payload = new
         {

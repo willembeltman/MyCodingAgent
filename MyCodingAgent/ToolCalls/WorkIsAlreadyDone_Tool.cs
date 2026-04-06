@@ -3,7 +3,7 @@ using MyCodingAgent.Models;
 
 namespace MyCodingAgent.ToolCalls;
 
-public class WorkIsAlreadyDone_Tool(Workspace workspace) : IToolCall
+public class WorkIsAlreadyDone_Tool(Current current) : IToolCall
 {
     public string Name
         => "work_is_already_done";

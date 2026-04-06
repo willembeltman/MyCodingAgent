@@ -7,13 +7,13 @@ namespace MyCodingAgent.Agents;
 
 public class CodeReviewer_Agent : BaseAgent, IAgent
 {
-    public CodeReviewer_Agent(IClient client, Workspace workspace, Model model) 
-        : base(client, workspace, model)
+    public CodeReviewer_Agent(Current current) 
+        : base(current)
     {
-        WorkspaceTool = new WorkspaceReadonly_Tool(workspace);
-        SubTasksTool = new SubTasks_Tool(workspace);
-        CodeReviewIsDoneTool = new CodeReviewIsDone_Tool(workspace);
-        AskHumanDeveloperTool = new AskHumanDeveloper_Question_Tool(workspace, AgentType.CodeReviewer);
+        WorkspaceTool = new WorkspaceReadonly_Tool(current);
+        SubTasksTool = new SubTasks_Tool(current);
+        CodeReviewIsDoneTool = new CodeReviewIsDone_Tool(current);
+        AskHumanDeveloperTool = new AskHumanDeveloper_Question_Tool(current, Actor.CodeReviewer);
 
         Tools =
         [
@@ -24,18 +24,21 @@ public class CodeReviewer_Agent : BaseAgent, IAgent
         ];
     }
 
-    public AgentType AgentName => AgentType.CodeReviewer;
+    public Actor AgentName => Actor.CodeReviewer;
     public WorkspaceReadonly_Tool WorkspaceTool { get; }
     public SubTasks_Tool SubTasksTool { get; }
     public CodeReviewIsDone_Tool CodeReviewIsDoneTool { get; }
     public AskHumanDeveloper_Question_Tool AskHumanDeveloperTool { get; }
 
-    protected override List<ResponseResults> History => Workspace.PlanningHistory;
+    protected override IEnumerable<WorkspaceEvent> History 
+        => CurrentTask
+            .GetEvents(CurrentWorkspace)
+            .Where(a => a.Conversation == Conversation.System || a.Conversation == Conversation.CodeReview);
     protected override IToolCall[] Tools { get; }
 
-    public async Task<ApiCall> GenerateApiCall()
+    public async Task<LlmRequest> GenerateRequest(CompileResult compileResult)
     {
-        List<Message> messageList = 
+        List<Message> requestMessages = 
         [
             // SYSTEM PROMPT
             new Message(
@@ -67,21 +70,22 @@ TARGET
                 nameof(AgentRole.User).ToLower(),
                 null,
                 $@"--- DEVELOPER REQUEST ---
-{Workspace.UserPrompt}
+{CurrentTask.UserPrompt}
 --- END OF DEVELOPER REQUEST ---",
                 null, 
                 null),
         ];
 
+
         // CHAT HISTORY
-        AddHistoryAndToolCalls(
-            messageList, 
-            History, 
-            [ ..Tools.Select(a => a.ToDto())],
+        var requestTools = Tools.Select(a => a.ToDto()).ToArray();
+        AddHistoryToMessageList(
+            requestMessages,
+            requestTools,
             additionalSizeInBytes: 0);
 
-        return new ApiCall(
-            [.. messageList],
-            [.. Tools.Select(a => a.ToDto())]);
+        return new LlmRequest(
+            [.. requestMessages],
+            requestTools);
     }
 }

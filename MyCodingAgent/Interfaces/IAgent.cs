@@ -5,8 +5,8 @@ namespace MyCodingAgent.Interfaces;
 
 public interface IAgent
 {
-    AgentType AgentName { get; }
+    Actor AgentName { get; }
 
-    Task<ApiCall> GenerateApiCall();
-    Task<ResponseResults> ProcessResponse(ApiCall apiCall, Response agentResponse);
+    Task<LlmRequest> GenerateRequest(CompileResult compileResult);
+    Task<ToolCallResult[]> ProcessResponse(LlmRequest request, LlmResponse response);
 }

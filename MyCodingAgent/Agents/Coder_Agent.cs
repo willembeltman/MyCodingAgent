@@ -2,19 +2,20 @@
 using MyCodingAgent.Models;
 using MyCodingAgent.Enums;
 using MyCodingAgent.ToolCalls;
+using MyCodingAgent.Extentions;
 
 namespace MyCodingAgent.Agents;
 
 public class Coder_Agent : BaseAgent, IAgent
 {
-    public Coder_Agent(IClient client, Workspace workspace, Model model) : base(client, workspace, model)
+    public Coder_Agent(Current current) : base(current)
     {
-        WorkspaceTool = new Workspace_Tool(workspace);
-        AskProjectManagerTool = new AgentToAgent_Question_Tool(workspace, AgentType.Coder, AgentType.ProjectManager, 
+        WorkspaceTool = new Workspace_Tool(current);
+        AskProjectManagerTool = new AgentToAgent_Question_Tool(current, Actor.Coder, Actor.ProjectManager, 
             "ask_project_manager_agent",
             "Use when blocked by missing info or unclear requirements",
             "The specific question or missing information needed to proceed with the task");
-        CurrentSubTaskIsFinishedTool = new SubTaskIsFinished_Tool(workspace);
+        CurrentSubTaskIsFinishedTool = new SubTaskIsFinished_Tool(current);
 
         Tools =
         [
@@ -24,15 +25,19 @@ public class Coder_Agent : BaseAgent, IAgent
         ];
     }
 
-    public AgentType AgentName => AgentType.Coder;
-    public Workspace_Tool WorkspaceTool { get; }
-    public AgentToAgent_Question_Tool AskProjectManagerTool { get; }
-    public SubTaskIsFinished_Tool CurrentSubTaskIsFinishedTool { get; }
+    private Workspace_Tool WorkspaceTool { get; }
+    private AgentToAgent_Question_Tool AskProjectManagerTool { get; }
+    private SubTaskIsFinished_Tool CurrentSubTaskIsFinishedTool { get; }
 
-    protected override List<ResponseResults> History => Workspace.CodingHistory;
+    public Actor AgentName => Actor.Coder;
+    protected override IEnumerable<WorkspaceEvent> History
+        => CurrentSubTask?
+            .GetEvents(CurrentWorkspace)
+            .Where(a => a.Conversation == Conversation.System || a.Conversation == Conversation.Coding)
+            ?? [];
     protected override IToolCall[] Tools { get; }
 
-    public async Task<ApiCall> GenerateApiCall()
+    public virtual async Task<LlmRequest> GenerateRequest(CompileResult compileResult)
     {
         List<Message> messageList =
         [
@@ -66,7 +71,7 @@ RULES
                 null)
         ];
 
-        var currentSubTask = Workspace.GetCurrentSubTask();
+        var currentSubTask = CurrentTask.GetCurrentSubTask();
         if (currentSubTask != null)
         {
             var currentSubTaskMessage = new Message(
@@ -81,15 +86,15 @@ RULES
         }
 
         // CHAT HISTORY
-        AddHistoryAndToolCalls(
+        var requestTools = Tools.Select(a => a.ToDto()).ToArray();
+        AddHistoryToMessageList(
             messageList,
-            History,
-            [.. Tools.Select(a => a.ToDto())],
+            requestTools,
             additionalSizeInBytes: 0);
 
-        return new ApiCall(
+        return new LlmRequest(
             [.. messageList],
-            [.. Tools.Select(a => a.ToDto())]);
+            requestTools);
     }
 
 }

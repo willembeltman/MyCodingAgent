@@ -1,6 +1,6 @@
 ﻿namespace MyCodingAgent.Models;
 
-public record Response(
+public record LlmResponse(
     string model,
     DateTime created_at,
     Message message);
