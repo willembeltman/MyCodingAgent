@@ -2,6 +2,7 @@
 using MyCodingAgent.Helpers;
 using MyCodingAgent.Interfaces;
 using MyCodingAgent.Models;
+using System.Text.Json;
 
 namespace MyCodingAgent;
 
@@ -13,16 +14,15 @@ public record Current(
 {
     public WorkspaceSubTask? SubTask => Task.GetCurrentSubTask();
     public bool IsDone => Task.Flags.TaskIsDoneFlag;
+    public int GetNewEventId() => Workspace.GetNewEventId();
+    public bool HasInboxMessages() => Workspace.HasInboxMessages();
+    public Task Save() => Workspace.Save();
 
     public bool NeedsPlanner()
     {
         return
             Task.SubTasks.Count == 0 ||
             Task.Flags.PlanningIsDoneFlag == false;
-    }
-    public bool HasInboxMessages()
-    {
-        return Task.InboxMessages.Count > 0;
     }
     public bool NeedsDebugging(CompileResult compileResult)
     {
@@ -99,4 +99,5 @@ public record Current(
             return compileResult;
         }
     }
+
 }

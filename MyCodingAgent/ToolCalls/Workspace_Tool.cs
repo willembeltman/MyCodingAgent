@@ -1,9 +1,11 @@
-﻿using MyCodingAgent.Models;
+﻿using MyCodingAgent.Extentions;
+using MyCodingAgent.Interfaces;
+using MyCodingAgent.Models;
 using System.Text.RegularExpressions;
 
 namespace MyCodingAgent.ToolCalls;
 
-public class Workspace_Tool(Current Current) : WorkspaceReadonly_Tool(Current)
+public record Workspace_Tool(IAgent Agent, Current Current) : WorkspaceReadonly_Tool(Agent, Current)
 {
     public override string Name => "workspace";
     public override string Description => "Interact with the workspace";
@@ -94,16 +96,15 @@ public class Workspace_Tool(Current Current) : WorkspaceReadonly_Tool(Current)
                 "Error parameter content is not supplied",
                 true);
 
-        Models.WorkspaceTask.GaurdParseFullPath(toolArguments.Path, out var fullPath);
+        Current.GaurdParseFullPath(toolArguments.Path, out var fullPath);
 
         try
         {
-            var file = WorkspaceTask.GetFile(toolArguments.Path);
+            var file = Current.Workspace.GetFile(toolArguments.Path);
             if (file == null)
             {
-                var newFile = new WorkspaceFile(toolArguments.Path, fullPath);
-                await newFile.UpdateContent(toolArguments.Content);
-                WorkspaceTask.Files.Add(newFile);
+                var newFile = new WorkspaceFile(toolArguments.Path);
+                var ioOperation = await newFile.Write(toolArguments.Content, toolArguments.LineNumber);
                 return new ToolResult(
                     $"Created {toolArguments.Path}:\r\n{toolArguments.Content}",
                     $"Created {toolArguments.Path}",
@@ -111,12 +112,11 @@ public class Workspace_Tool(Current Current) : WorkspaceReadonly_Tool(Current)
             }
             else
             {
-                var originalFile = WorkspaceTask.GetOriginalFile(toolArguments.Path);
-                var oldContent = originalFile?.Content ?? string.Empty;
+                var originalFile = Current.Workspace.GetFile(toolArguments.Path, Agent.StartPoint);
+                var oldContent = originalFile?.GetFileContent() ?? string.Empty;
                 var newContent = await file.GetFileContent() ?? string.Empty;
                 var sb = GetDiffText(toolArguments, oldContent, newContent);
 
-                await file.UpdateContent(toolArguments.Content);
                 return new ToolResult(
                     $"Updated {toolArguments.Path} Changes:\r\n{sb}",
                     $"Updated {toolArguments.Path}",

@@ -30,7 +30,7 @@ public class AskHumanDeveloper_Question_Tool(Current current,
         if (toolCall.Id == null)
             throw new Exception("eeeuhm..");
 
-        workspace.InboxMessages.Add(
+        current.Workspace.InboxMessages.Add(
             new(toolCall.Id, agent, Actor.Human, toolArguments.Content));
 
         var answer = "Waiting for answer..";

@@ -1,4 +1,5 @@
-﻿using MyCodingAgent.Interfaces;
+﻿using MyCodingAgent.Extentions;
+using MyCodingAgent.Interfaces;
 using MyCodingAgent.Models;
 
 namespace MyCodingAgent.ToolCalls;
@@ -12,10 +13,10 @@ public class CodeReviewIsDone_Tool(Current current) : IToolCall
     public ToolParameter[] Parameters { get; } = []; // parameters
     public async Task<ToolResult> Invoke(ToolCall toolCall)
     {
-        workspace.Flags.IsCodeReviewingFlag = false;
-        workspace.Flags.TaskIsDoneFlag = !workspace.SubTasks.Any(a => a.Finished == false);
-        await workspace.Save();
-        if (workspace.Flags.TaskIsDoneFlag)
+        current.Task.Flags.IsCodeReviewingFlag = false;
+        current.Task.Flags.TaskIsDoneFlag = !current.Task.SubTasks.Any(a => a.Finished == false);
+        await current.Save();
+        if (current.Task.Flags.TaskIsDoneFlag)
         {
             return new ToolResult("Code review approved", "Code review approved", false);
         }

@@ -28,10 +28,7 @@ public static class WorkspaceFactory
         if (!rootDirectory.Exists)
             rootDirectory.Create();
 
-        // For when the developer has already setup a project and the workspace.llm file is just missing
-        workspace.OriginalFiles.Clear();
         await workspace.InitializeDirectory(rootDirectory);
-
         return workspace;
     }
 }

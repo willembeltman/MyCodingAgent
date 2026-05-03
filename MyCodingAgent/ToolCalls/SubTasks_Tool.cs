@@ -1,4 +1,5 @@
-﻿using MyCodingAgent.Interfaces;
+﻿using MyCodingAgent.Extentions;
+using MyCodingAgent.Interfaces;
 using MyCodingAgent.Models;
 
 namespace MyCodingAgent.ToolCalls;
@@ -42,7 +43,7 @@ public class SubTasks_Tool(Current current) : IToolCall
 
     public async Task<ToolResult> List()
     {
-        var listAllSubTasksText = await workspace.GetListAllSubTasksText();
+        var listAllSubTasksText = await current.Task.GetListAllSubTasksText();
         return new ToolResult(listAllSubTasksText, "Shown all subtasks", false);
     }
     public async Task<ToolResult> Create(ToolCall toolCall)
@@ -55,9 +56,9 @@ public class SubTasks_Tool(Current current) : IToolCall
                 true);
         try
         {
-            var id = workspace.SubTasks.Count != 0 ? workspace.SubTasks.Max(a => a.Id) : 0;
+            var id = current.Task.SubTasks.Count != 0 ? current.Task.SubTasks.Max(a => a.Id) : 0;
             var newSubTask = new WorkspaceSubTask(++id, toolArguments.Content);
-            workspace.SubTasks.Add(newSubTask);
+            current.Task.SubTasks.Add(newSubTask);
             return new ToolResult(
                 $"Created subtask {toolArguments.Id}:\r\n{toolArguments.Content}",
                 $"Created subtask {toolArguments.Id}",
@@ -85,16 +86,16 @@ public class SubTasks_Tool(Current current) : IToolCall
                 "parameter content is not supplied",
                 true);
 
-        var subtask = workspace.GetSubTask(toolArguments.Id);
+        var subtask = current.Task.GetSubTask(toolArguments.Id);
         if (subtask == null)
             return new ToolResult(
                 $"Error could not find subtask {toolArguments.Id}: {toolArguments.Content}",
                 $"Error could not find subtask",
                 true);
 
-        workspace.SubTasks.Remove(subtask);
+        current.Task.SubTasks.Remove(subtask);
         var newSubTask = new WorkspaceSubTask(subtask.Id, toolArguments.Content);
-        workspace.SubTasks.Add(newSubTask);
+        current.Task.SubTasks.Add(newSubTask);
         return new ToolResult(
             $"Updated subtask '{toolArguments.Id}':\r\n{toolArguments.Content}",
             $"Updated subtask",
@@ -111,10 +112,10 @@ public class SubTasks_Tool(Current current) : IToolCall
 
         try
         {
-            var subtask = workspace.GetSubTask(toolArguments.Id);
+            var subtask = current.Task.GetSubTask(toolArguments.Id);
             if (subtask != null)
             {
-                workspace.SubTasks.Remove(subtask);
+                current.Task.SubTasks.Remove(subtask);
                 return new ToolResult(
                     $"Deleted subtask {toolArguments.Id}",
                     $"Deleted subtask",
@@ -135,7 +136,7 @@ public class SubTasks_Tool(Current current) : IToolCall
     }
     public async Task<ToolResult> PlanningIsDone()
     {
-        workspace.Flags.PlanningIsDoneFlag = true;
+        current.Task.Flags.PlanningIsDoneFlag = true;
         return new ToolResult("OK DONE!", "OK DONE!", false);
     }
 }

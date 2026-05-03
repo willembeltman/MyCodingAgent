@@ -6,7 +6,8 @@ namespace MyCodingAgent.Interfaces;
 public interface IAgent
 {
     Actor AgentName { get; }
+    long StartPoint { get; }
 
     Task<LlmRequest> GenerateRequest(CompileResult compileResult);
-    Task<ToolCallResult[]> ProcessResponse(LlmRequest request, LlmResponse response);
+    Task<SystemResult> ProcessResponse(LlmRequest request, LlmResponse response);
 }

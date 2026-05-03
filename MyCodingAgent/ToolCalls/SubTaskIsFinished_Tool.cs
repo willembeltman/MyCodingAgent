@@ -1,4 +1,5 @@
-﻿using MyCodingAgent.Interfaces;
+﻿using MyCodingAgent.Extentions;
+using MyCodingAgent.Interfaces;
 using MyCodingAgent.Models;
 
 namespace MyCodingAgent.ToolCalls;
@@ -15,35 +16,24 @@ public class SubTaskIsFinished_Tool(Current current) : IToolCall
 
     public async Task<ToolResult> Invoke(ToolCall toolCall)
     {
-        var toolArguments = toolCall.Function.Arguments;
-
-        var subtask = workspace.GetCurrentSubTask()
+        var subtask = current.SubTask
             ?? throw new Exception("wtf?");
 
-        try
-        {
-            if (subtask.Finished)
-            {
-                return new ToolResult(
-                    $"Error subtask '{toolArguments.Id}' already finished",
-                    $"Error subtask already finished",
-                    true);
-            }
-
-            subtask.Finished = true;
-            workspace.Flags.NeedClearCodingHistoryFlag = true;
-
-            return new ToolResult(
-                $"Finished subtask '{subtask.Id}'",
-                $"Finished subtask",
-                false);
-        }
-        catch (Exception ex)
+        if (subtask.Finished)
         {
             return new ToolResult(
-                $"Error exception while finishing subtask '{subtask.Id}': {ex.Message}",
-                $"Error exception while finishing subtask ",
+                $"Error subtask '{toolCall.Function.Arguments.Id}' already finished",
+                $"Error subtask already finished",
                 true);
         }
+        subtask.Finished = true; // onnodig maar duidelijk
+
+        return new ToolResult(
+            $"Finished subtask '{subtask.Id}'",
+            $"Finished subtask",
+            false)
+        {
+            Flags = new ToolResultFlags() { SubTaskIsDoneFlag = true }
+        };
     }
 }

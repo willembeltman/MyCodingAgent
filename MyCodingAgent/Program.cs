@@ -14,7 +14,7 @@ using System.Reflection;
 internal class Program : IDisposable
 {
     readonly CancellationTokenSource Cts;
-    //readonly IClient Client;
+    readonly IClient Client;
     readonly Dictionary<(Actor from, Actor to), Func<AgentTeam, IEmailableAgent>> EmailableAgents = new()
     {
         { (Actor.Coder, Actor.ProjectManager), team => team.ProjectManagerForCoder },
@@ -122,7 +122,7 @@ internal class Program : IDisposable
             }
         }
 
-        await current.Workspace.Save();
+        await current.Save();
     }
 
     private async Task RunPlanningLoop(Current current, AgentTeam team, CompileResult compileResult)
@@ -131,17 +131,17 @@ internal class Program : IDisposable
         {
             await AgentFlow(current, team.Planner, compileResult);
         }
-        await current.Workspace.Save();
+        await current.Save();
     }
     private async Task RunInboxLoop(Current current, AgentTeam team, CompileResult compileResult)
     {
-        var message = current.Task.InboxMessages.LastOrDefault() ??
+        var message = current.Workspace.InboxMessages.LastOrDefault() ??
             throw new Exception("Er gaat iets mis in de flow, waarom wordt deze functie aangeroepen als er geen messages in de inbox staan.");
         if (!EmailableAgents.TryGetValue((message.From, message.To), out var emailableAgentGetter))
             throw new Exception("Er gaat iets mis in de flow, waarom wordt deze functie aangeroepen met een niet bekende from/to.");
         var emailableAgent = emailableAgentGetter(team);
         emailableAgent.SetCurrentMessage(message);
-        while (current.Task.InboxMessages.LastOrDefault() == message)
+        while (current.Workspace.InboxMessages.LastOrDefault() == message)
         {
             await AgentFlow(current, emailableAgent, compileResult);
         }
@@ -195,7 +195,7 @@ internal class Program : IDisposable
         if (historyItem.Request == null)
         {
             historyItem.Request = await agent.GenerateRequest(historyItem.CompileResult);
-            await current.Workspace.Save();
+            await current.Save();
         }
 
         foreach (var message in historyItem.Request.Messages)
@@ -207,14 +207,14 @@ internal class Program : IDisposable
             historyItem.Response = await Client.ChatAsync(current.Model, historyItem.Request);
         }
 
-        ShowMessage(historyItem.Response.message);
+        ShowMessage(historyItem.Response.Message);
         Console.WriteLine();
 
-        if (historyItem.ToolCallResults == null)
+        if (historyItem.Result == null)
         {
-            historyItem.ToolCallResults = await agent.ProcessResponse(historyItem.Request, historyItem.Response);
-            hasToolCalls = historyItem.ToolCallResults.Any(a => a.Result.Error == false);
-            await current.Workspace.Save();
+            historyItem.Result = await agent.ProcessResponse(historyItem.Request, historyItem.Response);
+            hasToolCalls = historyItem.Result.Events.Any(a => a.result.Error == false);
+            await current.Save();
         }
         
         return hasToolCalls;

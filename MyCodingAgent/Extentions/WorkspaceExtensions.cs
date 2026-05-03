@@ -51,6 +51,72 @@ public static class WorkspaceExtensions
             //workspace.OriginalFiles.Add(workspaceOriginalFile);
         }
     }
+    public static IEnumerable<WorkspaceFile> GetFiles(this Workspace currentWorkspace, long? eventId = null)
+    {
+        var files = new List<WorkspaceFile>();
+        var ioOperations = currentWorkspace.Events
+            .SelectMany(a => a.Result != null ? a.Result.Events : [])
+            .SelectMany(a => a.result.IoOperations)
+            .ToArray();
+
+        foreach (var ioOperation in ioOperations)
+        {
+            if (string.IsNullOrWhiteSpace(ioOperation.Path)) continue;
+            var path = ioOperation.Path;
+            var file = files
+                .FirstOrDefault(a =>
+                    a.RelativePath.Equals(path.Replace("/", "\\"), StringComparison.CurrentCultureIgnoreCase));
+            if (file == null)
+            {
+                file = new WorkspaceFile(path);
+                files.Add(file);
+            }
+            file.AddIoOperation(ioOperation);
+            break;
+        }
+
+        return files;
+    }
+
+    public static WorkspaceFile? GetFile(this Workspace workspace, string path, long? eventId = null)
+    {
+        return GetFiles(workspace, eventId).FirstOrDefault(a => a.RelativePath.Equals(path.Replace("/", "\\"), StringComparison.CurrentCultureIgnoreCase));
+    }
+
+    public static async Task<string> GetListAllFilesText(this Workspace workspace, string? query)
+    {
+        StringBuilder sb = new StringBuilder();
+        var files = workspace.GetFiles().ToArray();
+        if (!string.IsNullOrWhiteSpace(query))
+        {
+            sb.AppendLine($"query: '{query}'");
+            files = files
+                .Where(f => MatchesPattern(f.RelativePath, query))
+                .ToArray();
+        }
+        if (files.Length > 0)
+        {
+            foreach (var file in files)
+            {
+                var fileContent = await file.GetFileContent();
+                sb.AppendLine($"{file.RelativePath} ({fileContent.GetLineCount()} lines)");
+            }
+        }
+        else
+        {
+            sb.AppendLine("<No files found in workspace>");
+        }
+        return sb.ToString();
+    }
+    private static bool MatchesPattern(string input, string pattern)
+    {
+        var regex = "^" + Regex.Escape(pattern)
+            .Replace("\\*", ".*")
+            .Replace("\\?", ".") + "$";
+
+        return Regex.IsMatch(input, regex, RegexOptions.IgnoreCase);
+    }
+
     //public static IEnumerable<WorkspaceFile> GetFiles(this Workspace workspace)
     //{
     //    var files = workspace.OriginalFiles
@@ -82,14 +148,24 @@ public static class WorkspaceExtensions
     //    return files;
     //}
 
-    public static WorkspaceFile? GetFile(this Workspace workspace, string path)
-        => workspace
-            .GetFiles(workspace)
-                .FirstOrDefault(a =>
-                    a.RelativePath.Equals(path.Replace("/", "\\"), StringComparison.CurrentCultureIgnoreCase));
+    //public static WorkspaceFile? GetFile(this Workspace workspace, string path)
+    //    => workspace
+    //        .GetFiles(workspace)
+    //            .FirstOrDefault(a =>
+    //                a.RelativePath.Equals(path.Replace("/", "\\"), StringComparison.CurrentCultureIgnoreCase));
 
     public static WorkspaceTask? GetCurrentTask(this Workspace workspace)
         => workspace.Tasks.FirstOrDefault(a => a.Flags.TaskIsDoneFlag == false);
+
+    public static int GetNewEventId(this Workspace workspace)
+    {
+        return workspace.Events.Max(a => a.Id) + 1;
+    }
+    public static bool HasInboxMessages(this Workspace workspace)
+    {
+        return workspace.InboxMessages.Count > 0;
+    }
+
 
     public static async Task Save(this Workspace workspace)
     {

@@ -13,9 +13,9 @@ public class WorkIsAlreadyDone_Tool(Current current) : IToolCall
 
     public async Task<ToolResult> Invoke(ToolCall toolCall)
     {
-        workspace.Flags.PlanningIsDoneFlag = true;
-        workspace.Flags.IsCodeReviewingFlag = true;
-        await workspace.Save();
+        current.Task.Flags.PlanningIsDoneFlag = true;
+        current.Task.Flags.IsCodeReviewingFlag = true;
+        await current.Save();
         return new ToolResult("OK DONE!", "OK DONE!", false);
     }
 }

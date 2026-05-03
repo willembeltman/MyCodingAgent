@@ -1,7 +1,5 @@
-﻿using MyCodingAgent.Helpers;
-using MyCodingAgent.Models;
+﻿using MyCodingAgent.Models;
 using System.Text;
-using System.Text.RegularExpressions;
 
 namespace MyCodingAgent.Extentions;
 
@@ -30,6 +28,7 @@ public static class WorkspaceTaskExtensions
         => workspace.SubTasks.FirstOrDefault(a => a.Id.ToString() == id);
     public static WorkspaceSubTask? GetCurrentSubTask(this WorkspaceTask workspace)
         => workspace.SubTasks.FirstOrDefault(a => a.Finished == false);
-
+    public static IEnumerable<WorkspaceEvent> GetEvents(this WorkspaceTask workspaceTask, Workspace workspace) 
+        => workspace.Events.Where(a => a.TaskId == workspaceTask.Id);
 
 }

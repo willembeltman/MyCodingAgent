@@ -20,112 +20,72 @@ public abstract class BaseAgent(Current Current)
 
     protected void AddHistoryToMessageList(List<Message> messageList, Tool[] tools, int additionalSizeInBytes = 0)
     {
-        var notNullHistory = History
-            .Where(a =>
-                string.IsNullOrWhiteSpace(a.Response?.message.Content) == false ||
-                (a.Response?.message.ToolCalls != null && a.Response.message.ToolCalls.Length > 0))
-            .ToList();
-
         var messagesJson = JsonSerializer.Serialize(messageList, DefaultJsonSerializerOptions.JsonSerializeOptionsIndented);
         var messagesJsonLength = messagesJson.Length;
         var toolsJson = CurrentClient.CreateToolsJson(tools);
         var toolsJsonLength = toolsJson.Length;
-        var maxHistory = 0;
-        int maxLongDesciptionPrompt = 0;
         var totalLength = messagesJsonLength + toolsJsonLength + additionalSizeInBytes;
 
         var useShortContent = false;
 
         HashSet<CacheMessage> shownMessages = [];
+        List<Message> tempMessages = new List<Message>();
 
-        foreach (var e in notNullHistory.ToArray().Reverse())
+        foreach (var workspaceEvent in History.ToArray().Reverse())
         {
-            var response = CleanMessage(e.Response.message);
-
-            var responseJson = JsonSerializer.Serialize(response, DefaultJsonSerializerOptions.JsonSerializeOptionsIndented);
-            totalLength += responseJson.Length;
+            if (workspaceEvent.Response == null) continue;
 
             // TOOL CALLS REPLIES
-            if (e.ToolCallResults.Length > 0)
+            if (workspaceEvent.Result != null && 
+                workspaceEvent.Result.Events.Length > 0 &&
+                workspaceEvent.Result.Events.Any(a => a.tool_call != null))
             {
-                foreach (var toolCall in e.ToolCallResults)
+                foreach (var toolCall in workspaceEvent.Result.Events)
                 {
+                    var call = toolCall.tool_call!; // Staat al in de if
                     var cacheMessage = new CacheMessage(
-                        toolCall.ToolCall.Function.Name,
-                        toolCall.ToolCall.Function.Arguments.Id,
-                        toolCall.ToolCall.Function.Arguments.Action,
-                        toolCall.ToolCall.Function.Arguments.Path,
-                        toolCall.ToolCall.Function.Arguments.NewPath,
-                        toolCall.ToolCall.Function.Arguments.Query,
-                        toolCall.ToolCall.Function.Arguments.Content,
-                        toolCall.ToolCall.Function.Arguments.LineNumber);
-                    if (!shownMessages.Add(cacheMessage)) // Todo, als het model ooit meerdere actions gaat uitvoeren
+                        call.Function.Name,
+                        call.Function.Arguments.Id,
+                        call.Function.Arguments.Action,
+                        call.Function.Arguments.Path,
+                        call.Function.Arguments.NewPath,
+                        call.Function.Arguments.Query,
+                        call.Function.Arguments.Content,
+                        call.Function.Arguments.LineNumber);
+                    if (!shownMessages.Add(cacheMessage))
                     {
-                        notNullHistory.Remove(e);
                         continue;
                     }
 
-                    if (useShortContent) { }
-                    var message = CreateToolCallbackMessage(false, toolCall);
+                    var message = CreateToolCallbackMessage(useShortContent, toolCall);
+                    tempMessages.Add(message);
                     var messageJson = JsonSerializer.Serialize(message, DefaultJsonSerializerOptions.JsonSerializeOptionsIndented);
                     totalLength += messageJson.Length;
                 }
             }
             else
             {
-                var message = CreateToolCallbackMessage(false, null);
+                var message = CreateToolCallbackMessage(false, null); // No toolcall message
+                tempMessages.Add(message);  
                 var messageJson = JsonSerializer.Serialize(message, DefaultJsonSerializerOptions.JsonSerializeOptionsIndented);
                 totalLength += messageJson.Length;
             }
 
-            if (totalLength < (CurrentModel.MaxTokenSize ?? 4096) * 3)
-                maxLongDesciptionPrompt++;
-            else
-            {
+            // Dan achteraf de response van de llm (die wordt zo omgedraait)
+            var responseMessage = CleanMessage(workspaceEvent.Response.Message);
+            tempMessages.Add(responseMessage);
+            var responseMessageJson = JsonSerializer.Serialize(responseMessage, DefaultJsonSerializerOptions.JsonSerializeOptionsIndented);
+            totalLength += responseMessageJson.Length;
+
+            if (totalLength > (CurrentModel.MaxTokenSize ?? 4096) * 3)
                 useShortContent = true;
-            }
 
-            if (totalLength < (CurrentModel.MaxTokenSize ?? 4096) * 4)
-                maxHistory++;
-            else
-            {
+            if (totalLength > (CurrentModel.MaxTokenSize ?? 4096) * 4)
                 break;
-            }
         }
 
-        var i = notNullHistory.Count; // Dan terug tellen
-        foreach (var e in notNullHistory)
-        {
-            if (i > maxHistory)
-            {
-                i--;
-                continue;
-            }
-
-            // AGENT RESPONSE 
-            messageList.Add(CleanMessage(e.Response.message));
-
-            // TOOL CALLS REPLIES
-            if (e.ToolCallResults.Length > 0)
-            {
-                foreach (var toolCall in e.ToolCallResults)
-                {
-                    messageList.Add(CreateToolCallbackMessage(false, toolCall));// i > maxLongDesciptionPrompt, toolCall));
-                }
-            }
-            else
-            {
-                messageList.Add(
-                    CreateToolCallbackMessage(false, null));//i > maxLongDesciptionPrompt, null));
-            }
-
-            i--;
-        }
-
-        messagesJson = JsonSerializer.Serialize(messageList, DefaultJsonSerializerOptions.JsonSerializeOptionsIndented);
-        messagesJsonLength = messagesJson.Length;
-        totalLength = messagesJsonLength + toolsJsonLength + additionalSizeInBytes;
-
+        tempMessages.Reverse();
+        messageList.AddRange(tempMessages);
     }
 
     private static Message CleanMessage(Message message)
@@ -172,22 +132,22 @@ public abstract class BaseAgent(Current Current)
             toolCalls);
     }
 
-    private static Message CreateToolCallbackMessage(bool useShortContent, ToolCallResult? toolCall)
+    private static Message CreateToolCallbackMessage(bool useShortContent, SystemResultEvent? toolCall)
     {
         return new Message(
             nameof(AgentRole.Tool).ToLower(),
-            toolCall?.ToolCall.Id,
-            toolCall == null ? "Error: no tool_calls found" : useShortContent ? toolCall.Result.ShortContent : toolCall.Result.Content,
+            toolCall?.tool_call?.Id,
+            toolCall == null ? "Error: no tool_calls found" : useShortContent ? toolCall.result.ShortContent : toolCall.result.Content,
             null,
             null);
     }
 
-    public async Task<ToolCallResult[]> ProcessResponse(LlmRequest request, LlmResponse response)
+    public async Task<SystemResult> ProcessResponse(LlmRequest request, LlmResponse response)
     {
-        var toolCallResults = new List<ToolCallResult>();
-        if (response.message.ToolCalls != null)
+        var toolCallResults = new List<SystemResultEvent>();
+        if (response.Message.ToolCalls != null)
         {
-            foreach (var tool_call in response.message.ToolCalls)
+            foreach (var tool_call in response.Message.ToolCalls)
             {
                 var toolName = tool_call.Function.Name;
                 var toolArguments = tool_call.Function.Arguments;
@@ -195,25 +155,31 @@ public abstract class BaseAgent(Current Current)
                 var tool = Tools.FirstOrDefault(a => a.Name == toolName);
                 if (tool == null)
                 {
-                    toolCallResults.Add(new ToolCallResult(
+                    toolCallResults.Add(new SystemResultEvent(
                         tool_call,
                         new ToolResult(
                             $"Could not find tool '{toolName}'",
                             $"Could not find tool",
-                            null,
-                            true)));
+                           true)));
                     continue;
                 }
                 else
                 {
                     var toolResult = await tool.Invoke(tool_call);
-                    toolCallResults.Add(new ToolCallResult(
+
+                    if (toolResult.Flags.PlanningIsDoneFlag)
+                        Current.Task.Flags.PlanningIsDoneFlag = true;
+                    if (toolResult.Flags.DebuggingIsDoneFlag)
+                        Current.Task.Flags.IsDebuggingFlag = false;
+                    if (toolResult.Flags.TaskIsDoneFlag)
+                        Current.Task.Flags.TaskIsDoneFlag = true;
+
+                    toolCallResults.Add(new SystemResultEvent(
                         tool_call,
                         toolResult));
                 }
             }
         }
-
-        return [.. toolCallResults];
+        return new SystemResult([.. toolCallResults]);
     }
 }

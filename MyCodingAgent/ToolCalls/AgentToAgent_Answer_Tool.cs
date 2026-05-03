@@ -3,7 +3,8 @@ using MyCodingAgent.Models;
 
 namespace MyCodingAgent.ToolCalls;
 
-public class AgentToAgent_Answer_Tool(Current current,
+public class AgentToAgent_Answer_Tool(
+    Current current,
     string name,
     string description,
     string contentParameterDescription)
@@ -33,14 +34,13 @@ public class AgentToAgent_Answer_Tool(Current current,
         if (Message == null)
             throw new Exception("Oh ooh..");
 
-        var coderToolCall = workspace.History
-            .Where(a => a.ResponseResults != null)
-            .SelectMany(a => a.ResponseResults!.ToolCallResults)
-            .FirstOrDefault(a => a.tool_call.Id == Message.ToolCallId)
+        var coderToolCall = current.Workspace.Events
+            .SelectMany(a => a.Result != null ? a.Result.Events : [])
+            .FirstOrDefault(a => a.tool_call?.Id == Message.ToolCallId)
             ?? throw new Exception("Oh ooh..");
-        coderToolCall.result.content = toolArguments.Content;
+        coderToolCall.result.Content = toolArguments.Content;
 
-        workspace.InboxMessages.Remove(Message);
+        current.Workspace.InboxMessages.Remove(Message);
         Message = null;
 
         return new ToolResult(

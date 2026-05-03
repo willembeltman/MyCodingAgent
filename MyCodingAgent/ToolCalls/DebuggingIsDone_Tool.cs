@@ -22,17 +22,24 @@ public class DebuggingIsDone_Tool(Current current) : IToolCall
                 "Error parameter content is not supplied",
                 true);
 
-        var history = workspace.CodingHistory.LastOrDefault();
-        history?.ToolCallResults.Add(
-                new ToolCallResult(toolCall,
-                    new ToolResult(
-                        $"Your changes resulted in a error, so the debug agent has fixed them.\r\nThis is his rapport about the fix:\r\n{toolArguments.Content}",
-                        $"Your changes resulted in a error, so the debug agent has fixed them",
-                        false)));
-        workspace.Flags.IsDebuggingFlag = false;
-        workspace.Flags.NeedClearDebugHistoryFlag = true;
-        await workspace.Save();
+        // Geschiedenis aanmaken om de coding agent te laten weten dat hij een error heeft veroorzaakt.
+        current.Workspace.Events.Add(new WorkspaceEvent()
+        {
+            Id = current.GetNewEventId(),
+            TaskId = current.Task.Id,
+            SubTaskId = current.SubTask?.Id,
+            Actor = Enums.Actor.Debugger,
+            Conversation = Enums.Conversation.Coding,
+            Result =
+                new SystemResult([
+                    new SystemResultEvent(toolCall,
+                        new ToolResult(
+                            $"Your changes resulted in a error, so the debug agent has fixed them.\r\nThis is his rapport about the fix:\r\n{toolArguments.Content}",
+                            $"Your changes resulted in a error, so the debug agent has fixed them",
+                            false))])
+        });
 
-        return new ToolResult("OK DONE!", "OK DONE!", false);
+        // En de debug is done 
+        return new ToolResult("Debugging done", "Debugging done", false, new ToolResultFlags() { DebuggingIsDoneFlag = true });
     }
 }

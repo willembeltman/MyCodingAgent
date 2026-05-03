@@ -8,14 +8,7 @@ public class WorkspaceFile
     {
         _OriginalRelativePath = relativePath;
     }
-    //public WorkspaceFile(WorkspaceOriginalFile originalFile)
-    //{
-    //    _OriginalRelativePath = originalFile.RelativePath;
-    //    _OriginalFile = originalFile;
-    //}
-
     private string _OriginalRelativePath { get; }
-    //private WorkspaceOriginalFile? _OriginalFile { get; }
     private List<IoOperation> _IoOperations { get; } = [];
 
     private string? _RelativePath = null;
@@ -40,10 +33,10 @@ public class WorkspaceFile
         }
     }
 
-    public Task<string> GetContent()
+    public string GetFileContent()
     {
         if (_Content != null)
-            return Task.FromResult(_Content);
+            return _Content;
 
         //_Content = _OriginalFile?.Content ?? string.Empty;
         _Content = string.Empty;
@@ -55,15 +48,19 @@ public class WorkspaceFile
                 _Content = ioOperation.Content;
             }
         }
-        return Task.FromResult(_Content);
+        return _Content;
     }
 
-    public void AddIoOperation(IoOperation ioOperation)
+    public IoOperation AddIoOperation(IoOperation ioOperation)
     {
         _IoOperations.Add(ioOperation);
         _RelativePath = null;
         _Content = null;
+        return ioOperation;
     }
+
+    public IoOperation Write(string content, int? lineNumber) 
+        => AddIoOperation(new IoOperation(IoOperationType.Write, RelativePath, null, null, content, lineNumber));
 }
 
 //public class WorkspaceFile(

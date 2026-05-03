@@ -6,10 +6,8 @@ using System.Text;
 
 namespace MyCodingAgent.ToolCalls;
 
-public class WorkspaceReadonly_Tool(Current current) : IToolCall
+public record WorkspaceReadonly_Tool(IAgent Agent, Current Current) : IToolCall
 {
-    protected Workspace Workspace = workspace;
-    protected WorkspaceTask WorkspaceTask = workspaceTask;
     public virtual string Name => "workspace";
     public virtual string Description => "Interact with the workspace";
 
@@ -64,7 +62,7 @@ public class WorkspaceReadonly_Tool(Current current) : IToolCall
     protected async Task<ToolResult> FilesList(ToolCall toolCall)
     {
         var toolArguments = toolCall.Function.Arguments;
-        var listAllFilesText = await WorkspaceTask.GetListAllFilesText(toolArguments.Query);
+        var listAllFilesText = await Current.Workspace.GetListAllFilesText(toolArguments.Query);
         return new ToolResult(listAllFilesText, "Shown all files", false);
     }
     protected async Task<ToolResult> Read(ToolCall toolCall)
@@ -76,7 +74,7 @@ public class WorkspaceReadonly_Tool(Current current) : IToolCall
                 "Error parameter path is not supplied",
                 true);
 
-        var file = WorkspaceTask.GetFile(workspace, toolArguments.Path);
+        var file = Current.Workspace.GetFile(toolArguments.Path);
         if (file == null)
         {
             return new ToolResult(
@@ -94,7 +92,7 @@ public class WorkspaceReadonly_Tool(Current current) : IToolCall
     protected async Task<ToolResult> Compile(ToolCall toolCall)
     {
         var toolArguments = toolCall.Function.Arguments;
-        var compileResult = await WorkspaceTask.Compile(toolArguments.Path);
+        var compileResult = await Current.Compile(toolArguments.Path);
 
         return new ToolResult(
             compileResult.Content,
@@ -109,10 +107,10 @@ public class WorkspaceReadonly_Tool(Current current) : IToolCall
                 "Error parameter query is not supplied",
                 "Error parameter query is not supplied",
                 true);
-        var files = WorkspaceTask.Files;
+        var files = Current.Workspace.GetFiles();
         if (string.IsNullOrEmpty(toolArguments.Path) == false)
         {
-            var file = WorkspaceTask.GetFile(toolArguments.Path);
+            var file = Current.Workspace.GetFile(toolArguments.Path);
             if (file != null)
             {
                 files = [file];
@@ -159,8 +157,8 @@ public class WorkspaceReadonly_Tool(Current current) : IToolCall
                 "Error: parameter 'path' is missing",
                 true);
 
-        var file = WorkspaceTask.GetFile(toolArguments.Path);
-        var originalFile = WorkspaceTask.GetOriginalFile(toolArguments.Path);
+        var file = Current.Workspace.GetFile(toolArguments.Path);
+        var originalFile = Current.Workspace.GetFile(toolArguments.Path);
 
         if (file == null)
             return new ToolResult(
@@ -174,7 +172,7 @@ public class WorkspaceReadonly_Tool(Current current) : IToolCall
                 "Error: original file not found",
                 true);
 
-        var oldContent = originalFile.Content ?? string.Empty;
+        var oldContent = await originalFile.GetFileContent() ?? string.Empty;
         var newContent = await file.GetFileContent() ?? string.Empty;
         var sb = GetDiffText(toolArguments, oldContent, newContent);
 
